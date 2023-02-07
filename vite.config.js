@@ -5,9 +5,9 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/absproxy/3000',
-  // publicDir: '/absproxy/3000/public',
   resolve: {
     alias: [
+      { find: '@components', replacement: '/src/components' },
       { find: '@', replacement: '/src' },
     ]
   },
