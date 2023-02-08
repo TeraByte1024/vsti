@@ -23,15 +23,15 @@ watch(()=>props.isPlaying, (isPlaying) => {
 
 function getOscNodeWithFrequency(frequency) {
     const audioContext = store.state.audioContext;
-    let oscNode = audioContext.createOscillator();
+    const oscNode = audioContext.createOscillator();
     oscNode.frequency.value = frequency;
     oscNode.type = "sine";
 
-    let gainNode = audioContext.createGain();
+    const gainNode = audioContext.createGain();
     gainNode.gain.value = 0.1;
-    oscNode.connect(gainNode);
 
-    oscNode.connect(audioContext.destination);
+    oscNode.connect(gainNode);
+    gainNode.connect(audioContext.destination);
     
     return oscNode;
 }
