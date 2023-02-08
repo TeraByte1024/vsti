@@ -1,91 +1,64 @@
-<script>
+<script setup>
+import KeyNote from '@components/vsti/KeyNote.vue'
+import { reactive } from 'vue'
 
-export default {
-    props: {
-        keyNodes: Array
-    },
-    data() {
-        return {
-            playing: [
-            ]
-        }
-    },
-    components: {
+const props = defineProps({
+    keyNotes: Array
+});
 
-    },
-    methods: {
-        pressedKey(key) {
-            const keyNode = this.getKeyNodeOf(key);
-            const frequency = keyNode.frequency;
-            this.playing[key] = this.playNote(frequency);
-        },
-        releasedKey(key) {
-            let playingNode = this.playing[key];
-            this.stopNote(playingNode);
-            delete this.playing[key];
-        },
-        getKeyNodeOf(key) {
-            return this.keyNodes.find((keyNode) => keyNode.key==key);
-        },
-        playNote(frequency) {
-            const audioContext = new AudioContext();
+const keyBoardListener = document.body;
+keyBoardListener.onkeydown = (event) => {
+    if(event.repeat) return;
+    pressedKey(event.key);
+};
+keyBoardListener.onkeyup = (event) => {
+    releasedKey(event.key);
+};
 
-            const oscNode = audioContext.createOscillator();
-            oscNode.frequency.value = frequency;
-            oscNode.type = "sine";
-
-            // const gainNode = audioContext.createGain();
-            // gainNode.gain.value = 0.5;
-            // oscNode.connect(gainNode);
-
-            oscNode.connect(audioContext.destination);
-            audioContext.resume();
-            oscNode.start();
-            return oscNode;
-        },
-        stopNote(playingNode) {
-            playingNode.stop();
-        }
-    },
-    mounted() {
-        const keyBoardListener = document.body;
-        keyBoardListener.onkeydown = (event) => {
-            console.log("down", event.key, !event.repeat?event.repeat:"");
-            if(event.repeat) return;
-            this.pressedKey(event.key);
-        };
-        keyBoardListener.onkeyup = (event) => {
-            console.log("up", event.key, !event.repeat?event.repeat:"");
-            this.releasedKey(event.key);
-        };
-    }
+function pressedKey(key) {
+    isPlaying[key] = true;
 }
 
+function releasedKey(key) {
+    isPlaying[key] = false;
+}
 
+const frequency = {
+    "C4"  : 261.63,
+    "C#4" : 277.18,
+    "D4"  : 293.66,
+    "D#4" : 311.13,
+    "E4"  : 329.63,
+    "F4"  : 349.23,
+    "F#4" : 369.99,
+    "G4"  : 392.00,
+    "G#4" : 415.30,
+    "A4"  : 440.00,
+    "A#4" : 466.16,
+    "B4"  : 493.88,
+    "C5"  : 523.25,
+}
+
+const isPlaying = reactive({});
+
+props.keyNotes.forEach(keyNote => {
+    releasedKey(keyNote.keyBind);
+});
 
 </script>
 
 <template>
-    <div v-for="keyNode in keyNodes" :key="keyNode.key"
-        class="keyNode" :id="keyNode.key" v-bind="keyNode" @pressedKey="pressedKey" @releasedKey="releasedKey"
-    >
-        {{ keyNode.pitch }}
-    </div>
+    <KeyNote v-for="keyNote in keyNotes"
+        :keyBind="keyNote.keyBind" :pitch="keyNote.pitch"
+        :frequency="frequency[keyNote.pitch]"
+        :isPlaying="isPlaying[keyNote.keyBind]"
+        @mousedown="pressedKey(keyNote.keyBind)" @mouseup="releasedKey(keyNote.keyBind)" />
 </template>
 
 <style scoped>
 
 div {
     display: inline-block;
-}
-.keyNode {
-    display: inline-block;
-    height: 60px;
-    width: 40px;
-    text-align: center;
-    margin: 1px;
-    border-radius: 5px;
-    background-color: lightgray;
 }
 
 </style>
