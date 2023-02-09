@@ -6,6 +6,7 @@ const props = defineProps({
     keyBind: String,
     pitch: String,
     frequency: Number,
+    volume: Number,
     isPlaying: Boolean,
 })
 
@@ -28,7 +29,7 @@ function getOscNodeWithFrequency(frequency) {
     oscNode.type = "sine";
 
     const gainNode = audioContext.createGain();
-    gainNode.gain.value = 0.1;
+    gainNode.gain.value = props.volume;
 
     oscNode.connect(gainNode);
     gainNode.connect(audioContext.destination);
