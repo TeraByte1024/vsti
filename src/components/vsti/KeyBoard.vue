@@ -1,11 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import KeyNote from '@components/vsti/KeyNote.vue';
+import { KeyBind } from '@interfaces/vsti';
 import BaseSlider from '@components/vsti/BaseSlider.vue';
+import BaseSelect from '@components/vsti/BaseSelect.vue';
 import { reactive, ref } from 'vue';
 
-const props = defineProps({
-    keyNotes: Array
-});
+const props = defineProps<{
+    keyBinds: KeyBind[]
+}>();
 
 const keyBoardListener = document.body;
 keyBoardListener.onkeydown = (event) => {
@@ -16,15 +18,15 @@ keyBoardListener.onkeyup = (event) => {
     releasedKey(event.key);
 };
 
-function pressedKey(key) {
+function pressedKey(key: string) {
     isPlaying[key] = true;
 }
 
-function releasedKey(key) {
+function releasedKey(key: string) {
     isPlaying[key] = false;
 }
 
-const frequency = {
+const frequency:{[index:string]:number} = {
     "C4"  : 261.63,
     "C#4" : 277.18,
     "D4"  : 293.66,
@@ -40,31 +42,40 @@ const frequency = {
     "C5"  : 523.25,
 }
 
-const isPlaying = reactive({});
-const masterVolume = ref(0.5);
+const wavetable:{label:string, value:any}[] = [
+    { label: "Sine", value: "sine" },
+    { label: "Square", value: "square" },
+    { label: "Saw", value: "sawtooth" },
+    { label: "Triangle", value: "triangle" },
+    { label: "Custom", value: "custom" },
+]
 
-props.keyNotes.forEach(keyNote => {
-    releasedKey(keyNote.keyBind);
+const isPlaying:{[index:string]: boolean} = reactive({});
+const masterVolume = ref<number>(0.5);
+const waveform = ref<string>('sine');
+
+props.keyBinds.forEach(keyBind => {
+    releasedKey(keyBind.key);
 });
 
 </script>
 
 <template>
     <div id="control">
-        <div class="slider">
-            <input type="range" v-model.number="masterVolume"
-                min=0 max=1 step=0.001 />
-            <div>{{ masterVolume }}</div>
-        </div>
+        <BaseSlider :min=0 :max=1 :step=0.001 :defaultValue="masterVolume"
+            @updateValue="newValue => {masterVolume = newValue;}" />
+        <BaseSelect :items="wavetable"
+            @updateValue="newValue => {waveform = newValue;}"/>
     </div>
     <div id="piano">
-        <KeyNote v-for="keyNote in keyNotes"
-            :keyBind="keyNote.keyBind"
-            :pitch="keyNote.pitch"
+        <KeyNote v-for="keyBind in keyBinds"
+            :keyBind="keyBind.key"
+            :pitch="keyBind.pitch"
             :volume="masterVolume"
-            :frequency="frequency[keyNote.pitch]"
-            :isPlaying="isPlaying[keyNote.keyBind]"
-            @mousedown="pressedKey(keyNote.keyBind)" @mouseup="releasedKey(keyNote.keyBind)"
+            :waveform="waveform"
+            :frequency="frequency[keyBind.pitch]"
+            :isPlaying="isPlaying[keyBind.key]"
+            @mousedown="pressedKey(keyBind.key)" @mouseup="releasedKey(keyBind.key)"
         />
     </div>
 </template>

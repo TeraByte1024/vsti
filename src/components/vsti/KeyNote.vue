@@ -1,16 +1,23 @@
-<script setup>
-import { watch } from 'vue';
-import store from '@components/stores/store.js'
+<script setup lang="ts">
+import { watch, ref } from 'vue';
+import store from '@components/stores/store';
 
-const props = defineProps({
-    keyBind: String,
-    pitch: String,
-    frequency: Number,
-    volume: Number,
-    isPlaying: Boolean,
-})
+const props = withDefaults(defineProps<{
+    keyBind: string,
+    pitch: string,
+    frequency: number,
+    waveform?: string,
+    volume?: number,
+    isPlaying: boolean
+}>(), {
+    waveform: 'sine',
+    volume: 0.5,
+    isPlaying: false
+});
 
-let oscNode = getOscNodeWithFrequency(props.frequency);;
+let oscNode = getOscNodeWithFrequency(props.frequency);
+
+const nodes = ref([]);
 
 watch(()=>props.isPlaying, (isPlaying) => {
     if(isPlaying) {
@@ -22,11 +29,11 @@ watch(()=>props.isPlaying, (isPlaying) => {
     }
 });
 
-function getOscNodeWithFrequency(frequency) {
+function getOscNodeWithFrequency(frequency: number) {
     const audioContext = store.state.audioContext;
     const oscNode = audioContext.createOscillator();
     oscNode.frequency.value = frequency;
-    oscNode.type = "sine";
+    oscNode.type = getWaveform(props.waveform) as OscillatorType;
 
     const gainNode = audioContext.createGain();
     gainNode.gain.value = props.volume;
@@ -35,6 +42,11 @@ function getOscNodeWithFrequency(frequency) {
     gainNode.connect(audioContext.destination);
     
     return oscNode;
+}
+
+function getWaveform(form: string) {
+    if(form == 'custom') return 'sine';
+    return props.waveform;
 }
 </script>
 
