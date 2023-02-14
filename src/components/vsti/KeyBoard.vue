@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import KeyNote from '@components/vsti/KeyNote.vue';
-import { KeyBind } from '@interfaces/vsti';
+import { onMounted, reactive, ref } from 'vue';
 import BaseSlider from '@components/vsti/BaseSlider.vue';
 import BaseSelect from '@components/vsti/BaseSelect.vue';
-import { reactive, ref } from 'vue';
+import KeyNote from '@components/vsti/KeyNote.vue';
+import { KeyBind } from '@interfaces/vsti';
+import store from '@components/stores/store';
 
 const props = defineProps<{
     keyBinds: KeyBind[]
@@ -51,19 +52,56 @@ const wavetable:{label:string, value:any}[] = [
 ]
 
 const isPlaying:{[index:string]: boolean} = reactive({});
-const masterVolume = ref<number>(0.5);
 const waveform = ref<OscillatorType>('sine');
 
-props.keyBinds.forEach(keyBind => {
-    releasedKey(keyBind.key);
-});
+const audioContext = store.state.audioContext;
+const gainNode = audioContext.createGain();
 
+function connectGain(oscNode: OscillatorNode) {
+    oscNode.connect(gainNode);
+}
+
+const nodes = ref<AudioNode[]>([
+    gainNode,
+]);
+
+function connectNodes() {
+    nodes.value.forEach((node, index) => {
+        const nextNode = nodes.value[index+1] || audioContext.destination;
+        node.connect(nextNode);
+    });
+}
+
+function addNodeAt(index:number, node:AudioNode) {
+    nodes.value.splice(index, 0, node);
+    connectNodeAt(index);
+}
+
+function replaceNodeAt(index:number, node:AudioNode) {
+    nodes.value[index] = node;
+    connectNodeAt(index);
+}
+
+function connectNodeAt(index:number) {
+    const prev = nodes.value[index-1];
+    const node = nodes.value[index];
+    const next = nodes.value[index+1] || audioContext.destination;
+    prev?.connect(node);
+    node.connect(next);
+}
+
+onMounted(()=> {
+    connectNodes();
+    props.keyBinds.forEach(keyBind => {
+        releasedKey(keyBind.key);
+    });
+});
 </script>
 
 <template>
     <div id="control">
-        <BaseSlider :min=0 :max=1 :step=0.001 :defaultValue="masterVolume"
-            @updateValue="newValue => {masterVolume = newValue;}" />
+        <BaseSlider :min=0 :max=1 :step=0.001 :defaultValue="0.5"
+            @updateValue="newValue => {gainNode.gain.value = newValue;}" />
         <BaseSelect :items="wavetable"
             @updateValue="newValue => {waveform = newValue;}"/>
     </div>
@@ -71,11 +109,11 @@ props.keyBinds.forEach(keyBind => {
         <KeyNote v-for="keyBind in keyBinds"
             :keyBind="keyBind.key"
             :pitch="keyBind.pitch"
-            :volume="masterVolume"
             :waveform="waveform"
             :frequency="frequency[keyBind.pitch]"
             :isPlaying="isPlaying[keyBind.key]"
             @mousedown="pressedKey(keyBind.key)" @mouseup="releasedKey(keyBind.key)"
+            @update-oscillator-node="connectGain"
         />
     </div>
 </template>

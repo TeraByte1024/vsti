@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref } from 'vue';
+import { watch } from 'vue';
 import store from '@components/stores/store';
 
 const props = withDefaults(defineProps<{
@@ -7,49 +7,24 @@ const props = withDefaults(defineProps<{
     pitch: string,
     frequency: number,
     waveform?: string,
-    volume?: number,
-    isPlaying: boolean
+    isPlaying: boolean,
 }>(), {
     waveform: 'sine',
     volume: 0.5,
     isPlaying: false
 });
-const audioContext = store.state.audioContext;    
-const nodes = ref<AudioNode[]>([
-    getOscNode(),
-    getGainNode(),
-]);
-connectNodes();
 
-function connectNodes() {
-    nodes.value.forEach((node, index) => {
-        const nextNode = nodes.value[index+1] || audioContext.destination;
-        node.connect(nextNode);
-    });
-}
+const emit = defineEmits<{
+    (event: 'updateOscillatorNode', oscNode: OscillatorNode): void
+}>();
 
-function addNodeAt(index:number, node:AudioNode) {
-    nodes.value.splice(index, 0, node);
-    connectNodeAt(index);
-}
+const audioContext: AudioContext = store.state.audioContext;
+let oscNode: OscillatorNode;
+refreshOscNode();
 
-function replaceNodeAt(index:number, node:AudioNode) {
-    nodes.value[index] = node;
-    connectNodeAt(index);
-}
-
-function connectNodeAt(index:number) {
-    const prev = nodes.value[index-1];
-    const node = nodes.value[index];
-    const next = nodes.value[index+1] || audioContext.destination;
-    prev?.connect(node);
-    node.connect(next);
-}
-
-function getGainNode(): GainNode {
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = props.volume;
-    return gainNode;
+function refreshOscNode() {
+    oscNode = getOscNode();
+    emit('updateOscillatorNode', oscNode);
 }
 
 function getOscNode(): OscillatorNode {
@@ -65,23 +40,16 @@ function getWaveform(form: string) {
 }
 
 watch(()=>props.isPlaying, (isPlaying:boolean) => {
-    const oscNode = nodes.value[0] as OscillatorNode;
     if(isPlaying) {
         store.state.audioContext.resume();
         oscNode.start();
     } else {
         oscNode.stop();
-        replaceNodeAt(0, getOscNode());
+        refreshOscNode();
     }
 });
 
-watch(()=>props.volume, (volume:number) => {
-    const gainNode = nodes.value[1] as GainNode;
-    gainNode.gain.value = volume;
-});
-
 watch(()=>props.waveform, (waveform:string) => {
-    const oscNode = nodes.value[0] as OscillatorNode;
     oscNode.type = getWaveform(waveform) as OscillatorType;
 });
 

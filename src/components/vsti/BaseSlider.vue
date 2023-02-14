@@ -14,13 +14,15 @@ const props = withDefaults(defineProps<{
 });
 
 const value = ref<number>(props.defaultValue);
+
 </script>
 
 <template>
     <div class="slider">
         <input type="range" v-model.number="value"
             v-bind="props"
-            @input="$emit('updateValue', value)"/>
+            @input="$emit('updateValue', value)"
+        />
         <div>{{ value }}</div>
     </div>
 </template>

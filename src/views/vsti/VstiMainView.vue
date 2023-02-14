@@ -21,7 +21,7 @@ const keyNotes: KeyBind[] = [
 </script>
 
 <template>
-    <KeyBoard :keyBinds="keyNotes" />    
+    <KeyBoard :keyBinds="keyNotes" />
 </template>
 
 <style scoped>
