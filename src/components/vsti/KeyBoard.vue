@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import BaseSlider from '@components/vsti/BaseSlider.vue';
 import BaseSelect from '@components/vsti/BaseSelect.vue';
+import Analyser from '@components/vsti/Analyser.vue';
 import KeyNote from '@components/vsti/KeyNote.vue';
 import { KeyBind } from '@interfaces/vsti';
 import store from '@components/stores/store';
@@ -56,6 +57,7 @@ const waveform = ref<OscillatorType>('sine');
 
 const audioContext = store.state.audioContext;
 const gainNode = audioContext.createGain();
+const analyserNode = audioContext.createAnalyser();
 
 function connectGain(oscNode: OscillatorNode) {
     oscNode.connect(gainNode);
@@ -63,7 +65,15 @@ function connectGain(oscNode: OscillatorNode) {
 
 const nodes = ref<AudioNode[]>([
     gainNode,
+    analyserNode,
 ]);
+
+onMounted(()=> {
+    connectNodes();
+    props.keyBinds.forEach(keyBind => {
+        releasedKey(keyBind.key);
+    });
+});
 
 function connectNodes() {
     nodes.value.forEach((node, index) => {
@@ -90,12 +100,6 @@ function connectNodeAt(index:number) {
     node.connect(next);
 }
 
-onMounted(()=> {
-    connectNodes();
-    props.keyBinds.forEach(keyBind => {
-        releasedKey(keyBind.key);
-    });
-});
 </script>
 
 <template>
@@ -104,6 +108,7 @@ onMounted(()=> {
             @updateValue="newValue => {gainNode.gain.value = newValue;}" />
         <BaseSelect :items="wavetable"
             @updateValue="newValue => {waveform = newValue;}"/>
+        <Analyser :analyser-node="analyserNode"/>
     </div>
     <div id="piano">
         <KeyNote v-for="keyBind in keyBinds"
@@ -122,13 +127,6 @@ onMounted(()=> {
 #control {
     display: inline-block;
     margin-bottom: 20px;
-}
-.slider {
-    display: inline-block;
-}
-
-.keyNote {
-    display: inline-block;
 }
 
 </style>
