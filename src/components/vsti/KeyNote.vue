@@ -14,33 +14,48 @@ const props = withDefaults(defineProps<{
     volume: 0.5,
     isPlaying: false
 });
+const audioContext = store.state.audioContext;    
+const nodes = ref<AudioNode[]>([
+    getOscNode(),
+    getGainNode(),
+]);
+connectNodes();
 
-let oscNode = getOscNodeWithFrequency(props.frequency);
+function connectNodes() {
+    nodes.value.forEach((node, index) => {
+        const nextNode = nodes.value[index+1] || audioContext.destination;
+        node.connect(nextNode);
+    });
+}
 
-const nodes = ref([]);
+function addNodeAt(index:number, node:AudioNode) {
+    nodes.value.splice(index, 0, node);
+    connectNodeAt(index);
+}
 
-watch(()=>props.isPlaying, (isPlaying) => {
-    if(isPlaying) {
-        store.state.audioContext.resume();
-        oscNode.start();
-    } else {
-        oscNode.stop();
-        oscNode = getOscNodeWithFrequency(props.frequency);
-    }
-});
+function replaceNodeAt(index:number, node:AudioNode) {
+    nodes.value[index] = node;
+    connectNodeAt(index);
+}
 
-function getOscNodeWithFrequency(frequency: number) {
-    const audioContext = store.state.audioContext;
-    const oscNode = audioContext.createOscillator();
-    oscNode.frequency.value = frequency;
-    oscNode.type = getWaveform(props.waveform) as OscillatorType;
+function connectNodeAt(index:number) {
+    const prev = nodes.value[index-1];
+    const node = nodes.value[index];
+    const next = nodes.value[index+1] || audioContext.destination;
+    prev?.connect(node);
+    node.connect(next);
+}
 
+function getGainNode(): GainNode {
     const gainNode = audioContext.createGain();
     gainNode.gain.value = props.volume;
+    return gainNode;
+}
 
-    oscNode.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
+function getOscNode(): OscillatorNode {
+    const oscNode = audioContext.createOscillator();
+    oscNode.frequency.value = props.frequency;
+    oscNode.type = getWaveform(props.waveform) as OscillatorType;
     return oscNode;
 }
 
@@ -48,6 +63,28 @@ function getWaveform(form: string) {
     if(form == 'custom') return 'sine';
     return props.waveform;
 }
+
+watch(()=>props.isPlaying, (isPlaying:boolean) => {
+    const oscNode = nodes.value[0] as OscillatorNode;
+    if(isPlaying) {
+        store.state.audioContext.resume();
+        oscNode.start();
+    } else {
+        oscNode.stop();
+        replaceNodeAt(0, getOscNode());
+    }
+});
+
+watch(()=>props.volume, (volume:number) => {
+    const gainNode = nodes.value[1] as GainNode;
+    gainNode.gain.value = volume;
+});
+
+watch(()=>props.waveform, (waveform:string) => {
+    const oscNode = nodes.value[0] as OscillatorNode;
+    oscNode.type = getWaveform(waveform) as OscillatorType;
+});
+
 </script>
 
 <template>

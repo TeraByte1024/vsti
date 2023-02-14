@@ -52,7 +52,7 @@ const wavetable:{label:string, value:any}[] = [
 
 const isPlaying:{[index:string]: boolean} = reactive({});
 const masterVolume = ref<number>(0.5);
-const waveform = ref<string>('sine');
+const waveform = ref<OscillatorType>('sine');
 
 props.keyBinds.forEach(keyBind => {
     releasedKey(keyBind.key);
@@ -82,6 +82,7 @@ props.keyBinds.forEach(keyBind => {
 
 <style scoped>
 #control {
+    display: inline-block;
     margin-bottom: 20px;
 }
 .slider {
