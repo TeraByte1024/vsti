@@ -56,7 +56,9 @@ watch(()=>props.waveform, (waveform:string) => {
 </script>
 
 <template>
-    <div class="keyNote" :class="{'playing':props.isPlaying}">{{ pitch }}</div>
+    <div class="keyNote" :class="{'playing':props.isPlaying}">
+        <span id="pitch">{{ pitch }}</span>
+    </div>
 </template>
 
 <style scoped>
@@ -67,11 +69,18 @@ watch(()=>props.waveform, (waveform:string) => {
     text-align: center;
     margin: 1px;
     border-radius: 5px;
-    background-color: lightgray;
+    color: #06113C;
+    background-color: #EEEEEE;
+}
+
+#pitch {
+    display: inline-block;
+    padding-bottom: 0px;
+    padding-top: 75%;
 }
 
 .playing {
-    background-color: darkgray;
+    background-color: #06113C;
     color: white;
 }
 

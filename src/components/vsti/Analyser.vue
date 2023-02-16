@@ -19,50 +19,46 @@ function initializeAnalyserNode() {
     analyserNode.fftSize = Math.pow(2, 13);
     bufferLength = analyserNode.frequencyBinCount;
     dataArray = new Uint8Array(bufferLength);
-    analyserNode.getByteTimeDomainData(dataArray);
     canvas = document.getElementById("oscilloscope") as HTMLCanvasElement;
     canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
     draw();
 }
 
 function draw() {
-  requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
 
-  analyserNode.getByteTimeDomainData(dataArray);
+    analyserNode.getByteTimeDomainData(dataArray);
 
-  canvasContext.fillStyle = "rgb(200, 200, 200)";
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    canvasContext.fillStyle = "#EEEEEE";
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-  canvasContext.lineWidth = 2;
-  canvasContext.strokeStyle = "rgb(0, 0, 0)";
+    canvasContext.lineWidth = 2;
+    canvasContext.strokeStyle = "#00092C";
 
-  canvasContext.beginPath();
+    canvasContext.beginPath();
 
-  const sliceWidth = (canvas.width * 1.0) / bufferLength;
-  let x = 0;
-
-  for (let i = 0; i < bufferLength; i++) {
-    const v = dataArray[i] / 128.0;
-    const y = (v * canvas.height) / 2;
-
-    if (i === 0) {
-        canvasContext.moveTo(x, y);
-    } else {
+    const sliceWidth = (canvas.width * 1.0) / bufferLength;
+    let x = 0;
+    let y = canvas.height / 2;
+    canvasContext.moveTo(x, y);
+    for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvas.height) / 2;
         canvasContext.lineTo(x, y);
+        x += sliceWidth;
     }
 
-    x += sliceWidth;
-  }
-
-  canvasContext.lineTo(canvas.width, canvas.height / 2);
-  canvasContext.stroke();
+    canvasContext.lineTo(canvas.width, canvas.height / 2);
+    canvasContext.stroke();
 }
 </script>
 
 <template>
-    <canvas id="oscilloscope"></canvas>
+    <canvas id="oscilloscope" width="200" height="100"></canvas>
 </template>
 
 <style scoped>
-
+#oscilloscope {
+    border-radius: 5px;
+}
 </style>
