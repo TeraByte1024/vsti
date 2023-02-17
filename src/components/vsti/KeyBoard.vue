@@ -81,19 +81,25 @@ const waveform = ref<OscillatorType>('sine');
 
 const audioContext = store.state.audioContext;
 const gainNode = audioContext.createGain();
+const convolverNode = audioContext.createConvolver();
 const analyserNode = audioContext.createAnalyser();
 
-function connectGain(oscNode: OscillatorNode) {
-    oscNode.connect(gainNode);
+const reverb:{duration:number, decay:number} = {
+    duration: 0.7,
+    decay: 3.5
 }
 
 const nodes = ref<AudioNode[]>([
     gainNode,
+    convolverNode,
     analyserNode,
 ]);
 
 onMounted(()=> {
+    initializeGainNode();
+    initializeConvolverNode();
     connectNodes();
+    gainNode.connect(analyserNode);
     props.keyBinds.forEach(keyBind => {
         releasedKey(keyBind.key);
     });
@@ -104,6 +110,22 @@ function connectNodes() {
         const nextNode = nodes.value[index+1] || audioContext.destination;
         node.connect(nextNode);
     });
+}
+
+function initializeGainNode() {
+    gainNode.gain.value = 0.3;
+}
+
+function initializeConvolverNode() {
+    convolverNode.buffer = getImpulseResponse(reverb);
+}
+
+function getImpulseResponse(reverb: {duration:number, decay:number}) {
+    const length = audioContext.sampleRate * reverb.duration;
+    const impulse = audioContext.createBuffer(1, length, audioContext.sampleRate);
+    const IRArray = impulse.getChannelData(0);
+    for(let i=0;i<length;i++) IRArray[i] = (2*Math.random()-1)*Math.pow(1-i/length, reverb.decay);
+    return impulse;
 }
 
 function addNodeAt(index:number, node:AudioNode) {
@@ -124,12 +146,21 @@ function connectNodeAt(index:number) {
     node.connect(next);
 }
 
+function connectGain(oscNode: OscillatorNode) {
+    oscNode.connect(gainNode);
+}
 </script>
 
 <template>
     <div id="control">
-        <BaseSlider :min=0 :max=1 :step=0.001 :defaultValue="0.5"
+        <BaseSlider :min=0 :max=1 :step=0.001 :defaultValue="0.3"
             @updateValue="newValue => {gainNode.gain.value = newValue;}" />
+        <BaseSlider :min=0.001 :max=3 :step=0.001 :defaultValue="0.7"
+            @updateValue="newValue => {reverb.duration = newValue;
+                convolverNode.buffer = getImpulseResponse(reverb);}" />
+        <BaseSlider :min=0 :max=5 :step=0.001 :defaultValue="3.5"
+            @updateValue="newValue => {reverb.decay = newValue;
+                convolverNode.buffer = getImpulseResponse(reverb);}" />
         <BaseSelect :items="wavetable"
             @updateValue="newValue => {waveform = newValue;}"/>
         <Analyser :analyser-node="analyserNode"/>
