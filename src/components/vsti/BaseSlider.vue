@@ -2,28 +2,30 @@
 import { ref } from 'vue';
 
 const props = withDefaults(defineProps<{
-    min: number,
-    max: number,
+    target: {
+        value: number
+    },
+    min?: number,
+    max?: number,
     step?: number,
-    defaultValue: number
 }>(), {
     min: 0,
     max: 1,
     step: 0.001,
-    defaultValue: 1
 });
 
-const value = ref<number>(props.defaultValue);
+const amount = ref<number>(props.target.value);
+
+function update() {
+    props.target.value = amount.value;
+}
 
 </script>
 
 <template>
     <div class="slider">
-        <input type="range" v-model.number="value"
-            v-bind="props"
-            @input="$emit('updateValue', value)"
-        />
-        <div>{{ value }}</div>
+        <input type="range" v-model.number="amount" v-bind="props" @input="update" />
+        <div>{{ amount }}</div>
     </div>
 </template>
 
