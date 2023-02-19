@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import store from '@components/stores/store';
+import { EnvelopeProps } from '@interfaces/vsti';
 
 const props = withDefaults(defineProps<{
     keyBind: string,
@@ -8,6 +9,7 @@ const props = withDefaults(defineProps<{
     frequency: number,
     waveform?: string,
     isPlaying: boolean,
+    readonly envelope: EnvelopeProps
 }>(), {
     waveform: 'sine',
     volume: 0.5,
@@ -15,43 +17,73 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-    (event: 'updateOscillatorNode', oscNode: OscillatorNode): void
+    (event: 'updateNode', tail: AudioNode): void
 }>();
 
 const audioContext: AudioContext = store.state.audioContext;
 let oscNode: OscillatorNode;
-refreshOscNode();
+const envelopeGainNode: GainNode = audioContext.createGain();
+
+onMounted(()=>{
+    refreshOscNode();
+    connectEnvelopeGainNode();
+    emit('updateNode', envelopeGainNode);
+});
 
 function refreshOscNode() {
     oscNode = getOscNode();
-    emit('updateOscillatorNode', oscNode);
+    connectEnvelopeGainNode();
 }
 
 function getOscNode(): OscillatorNode {
     const oscNode = audioContext.createOscillator();
     oscNode.frequency.value = props.frequency;
-    oscNode.type = getWaveform(props.waveform) as OscillatorType;
+    oscNode.type = getWaveform(props.waveform);
     return oscNode;
 }
 
-function getWaveform(form: string) {
+watch(()=>props.waveform, (waveform:string) => {
+    oscNode.type = getWaveform(waveform);
+});
+
+function getWaveform(form: string): OscillatorType {
     if(form == 'custom') return 'sine';
-    return props.waveform;
+    return props.waveform as OscillatorType;
+}
+
+function connectEnvelopeGainNode() {
+    oscNode.connect(envelopeGainNode);
 }
 
 watch(()=>props.isPlaying, (isPlaying:boolean) => {
     if(isPlaying) {
-        store.state.audioContext.resume();
-        oscNode.start();
+        startEnvelope();
     } else {
-        oscNode.stop();
+        endEnvelope();
         refreshOscNode();
     }
 });
 
-watch(()=>props.waveform, (waveform:string) => {
-    oscNode.type = getWaveform(waveform) as OscillatorType;
-});
+function startEnvelope() {
+    const { attack, decay, sustain } = props.envelope;
+    const gain = envelopeGainNode.gain;
+    let t = audioContext.currentTime;
+    gain.setValueAtTime(0, t);
+    t += attack.duration.value;
+    gain.linearRampToValueAtTime(1, t);
+    t += decay.duration.value;
+    gain.linearRampToValueAtTime(sustain.velocity.value, t);
+    oscNode.start();
+}
+
+function endEnvelope() {
+    const { release } = props.envelope;
+    let t = audioContext.currentTime;
+    const gain = envelopeGainNode.gain;
+    t += release.duration.value;
+    gain.linearRampToValueAtTime(0, t);
+    oscNode.stop(t);
+}
 
 </script>
 

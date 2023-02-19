@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, watch, reactive, ref } from 'vue';
 import type { Ref } from 'vue';
+import store from '@components/stores/store';
+import { KeyBind, EnvelopeProps } from '@interfaces/vsti';
 import BaseSlider from '@components/vsti/BaseSlider.vue';
 import BaseSelect from '@components/vsti/BaseSelect.vue';
 import Envelope from '@components/vsti/Envelope.vue';
 import Analyser from '@components/vsti/Analyser.vue';
 import KeyNote from '@components/vsti/KeyNote.vue';
-import { KeyBind } from '@interfaces/vsti';
-import store from '@components/stores/store';
 
 const props = defineProps<{
     keyBinds: KeyBind[]
@@ -96,6 +96,7 @@ const nodes = ref<AudioNode[]>([
 ]);
 
 onMounted(()=> {
+    store.state.audioContext.resume();
     bindkeyBoardEventListener();
     initializeGainNode();
     connectNodes();
@@ -155,8 +156,15 @@ function getImpulseResponse(reverb: {duration:Ref<number>, decay:Ref<number>}) {
     return impulse;
 }
 
-function connectGain(oscNode: OscillatorNode) {
-    oscNode.connect(gainNode);
+const envelope: EnvelopeProps = {
+    attack: {duration: ref<number>(0.1),},
+    decay: {duration: ref<number>(1),},
+    sustain: {velocity: ref<number>(0.4),},
+    release: {duration: ref<number>(0.5)}
+}
+
+function connectGain(audioNode: AudioNode) {
+    audioNode.connect(gainNode);
 }
 
 </script>
@@ -167,7 +175,7 @@ function connectGain(oscNode: OscillatorNode) {
         <BaseSlider :target="reverb.duration" :min=0.001 :max=5 :step=0.001 />
         <BaseSlider :target="reverb.decay" :min=0 :max=10 :step=0.001 />
         <!-- <BaseSelect :target="waveform" :items="wavetable" /> -->
-        <Envelope :gain-node="gainNode" />
+        <Envelope :envelope="envelope"  />
         <Analyser :analyser-node="analyserNode"/>
     </div>
     <div id="piano">
@@ -176,10 +184,11 @@ function connectGain(oscNode: OscillatorNode) {
             :pitch="keyBind.pitch"
             :waveform="waveform"
             :frequency="frequency[keyBind.pitch]"
+            :envelope="envelope"
             :isPlaying="isPlaying[keyBind.key]"
             @mousedown="pressedKey(keyBind.key)" @mouseup="releasedKey(keyBind.key)"
             @touchstart="pressedKey(keyBind.key)" @touchend="releasedKey(keyBind.key)"
-            @update-oscillator-node="connectGain"
+            @update-node="connectGain"
         />
     </div>
 </template>
