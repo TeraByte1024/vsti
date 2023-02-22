@@ -7,12 +7,11 @@ const props = withDefaults(defineProps<{
     keyBind: string,
     pitch: string,
     frequency: number,
-    waveform?: string,
+    waveform?: OscillatorType,
     isPlaying: boolean,
     readonly envelope: EnvelopeProps
 }>(), {
     waveform: 'sine',
-    volume: 0.5,
     isPlaying: false
 });
 
@@ -22,45 +21,41 @@ const emit = defineEmits<{
 
 const audioContext: AudioContext = store.state.audioContext;
 let oscNode: OscillatorNode;
-const envelopeGainNode: GainNode = audioContext.createGain();
+let envelopeGainNode: GainNode;
 
 onMounted(()=>{
-    refreshOscNode();
-    connectEnvelopeGainNode();
-    emit('updateNode', envelopeGainNode);
+    refreshNode();
 });
 
-function refreshOscNode() {
+function refreshNode() {
     oscNode = getOscNode();
-    connectEnvelopeGainNode();
+    envelopeGainNode = getGainNode();
+    oscNode.connect(envelopeGainNode);
+    emit('updateNode', envelopeGainNode);
 }
 
 function getOscNode(): OscillatorNode {
     const oscNode = audioContext.createOscillator();
     oscNode.frequency.value = props.frequency;
-    oscNode.type = getWaveform(props.waveform);
+    oscNode.type = props.waveform;
     return oscNode;
 }
 
-watch(()=>props.waveform, (waveform:string) => {
-    oscNode.type = getWaveform(waveform);
+function getGainNode(): GainNode {
+    const gainNode = audioContext.createGain();
+    return gainNode;
+}
+
+watch(()=>props.waveform, (waveform: OscillatorType) => {
+    oscNode.type = waveform;
 });
-
-function getWaveform(form: string): OscillatorType {
-    if(form == 'custom') return 'sine';
-    return props.waveform as OscillatorType;
-}
-
-function connectEnvelopeGainNode() {
-    oscNode.connect(envelopeGainNode);
-}
 
 watch(()=>props.isPlaying, (isPlaying:boolean) => {
     if(isPlaying) {
         startEnvelope();
     } else {
         endEnvelope();
-        refreshOscNode();
+        refreshNode();
     }
 });
 
@@ -77,9 +72,11 @@ function startEnvelope() {
 }
 
 function endEnvelope() {
-    const { release } = props.envelope;
-    let t = audioContext.currentTime;
+    const { sustain, release } = props.envelope;
     const gain = envelopeGainNode.gain;
+    let t = audioContext.currentTime;
+    gain.cancelScheduledValues(t);
+    gain.setValueAtTime(Math.min(gain.value, sustain.velocity.value), t);
     t += release.duration.value;
     gain.linearRampToValueAtTime(0, t);
     oscNode.stop(t);
