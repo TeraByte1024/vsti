@@ -37,6 +37,7 @@ function releasedKey(key: string) {
 
 const audioContext = store.state.audioContext;
 const gainNode = audioContext.createGain();
+gainNode.gain.value = 0.3;
 const convolverNode = audioContext.createConvolver();
 const analyserNode = audioContext.createAnalyser();
 
@@ -49,7 +50,6 @@ const nodes = ref<AudioNode[]>([
 onMounted(()=> {
     store.state.audioContext.resume();
     bindkeyBoardEventListener();
-    initializeGainNode();
     connectNodes();
     gainNode.connect(analyserNode);
     props.keyBinds.forEach(keyBind => {
@@ -80,10 +80,6 @@ function connectNodeAt(index:number) {
     const next = nodes.value[index+1] || audioContext.destination;
     prev?.connect(node);
     node.connect(next);
-}
-
-function initializeGainNode() {
-    gainNode.gain.value = 0.3;
 }
 
 const reverb:{duration:number, decay:number} = {
