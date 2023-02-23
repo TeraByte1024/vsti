@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": true,
+    "removeComments": true,
+    "strict": true,
+
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "paths": {
+      "@*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.vue"],
+  "exclude": ["node_modules", "dist"]
+}
