@@ -64,10 +64,10 @@ function startEnvelope() {
     const gain = envelopeGainNode.gain;
     let t = audioContext.currentTime;
     gain.setValueAtTime(0, t);
-    t += attack.duration.value;
+    t += attack.duration;
     gain.linearRampToValueAtTime(1, t);
-    t += decay.duration.value;
-    gain.linearRampToValueAtTime(sustain.velocity.value, t);
+    t += decay.duration;
+    gain.linearRampToValueAtTime(sustain.velocity, t);
     oscNode.start();
 }
 
@@ -76,8 +76,8 @@ function endEnvelope() {
     const gain = envelopeGainNode.gain;
     let t = audioContext.currentTime;
     gain.cancelScheduledValues(t);
-    gain.setValueAtTime(Math.min(gain.value, sustain.velocity.value), t);
-    t += release.duration.value;
+    gain.setValueAtTime(Math.min(gain.value, sustain.velocity), t);
+    t += release.duration;
     gain.linearRampToValueAtTime(0, t);
     oscNode.stop(t);
 }

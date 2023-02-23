@@ -87,9 +87,9 @@ function initializeGainNode() {
     gainNode.gain.value = 0.3;
 }
 
-const reverb:{duration:Ref<number>, decay:Ref<number>} = {
-    duration: ref<number>(0.7),
-    decay: ref<number>(3.5)
+const reverb:{duration:number, decay:number} = {
+    duration: 2.5,
+    decay: 5
 }
 
 watch(()=>getImpulseResponse(reverb), newImpulseResponse=> {
@@ -100,19 +100,19 @@ function refreshImpulseResponse(impulseResponse: AudioBuffer) {
     convolverNode.buffer = impulseResponse;
 }
 
-function getImpulseResponse(reverb: {duration:Ref<number>, decay:Ref<number>}) {
-    const length = audioContext.sampleRate * reverb.duration.value;
+function getImpulseResponse(reverb: {duration:number, decay:number}) {
+    const length = audioContext.sampleRate * reverb.duration;
     const impulse = audioContext.createBuffer(1, length, audioContext.sampleRate);
     const IRArray = impulse.getChannelData(0);
-    for(let i=0;i<length;i++) IRArray[i] = (2*Math.random()-1)*Math.pow(1-i/length, reverb.decay.value);
+    for(let i=0;i<length;i++) IRArray[i] = (2*Math.random()-1)*Math.pow(1-i/length, reverb.decay);
     return impulse;
 }
 
 const envelope: EnvelopeProps = {
-    attack: {duration: ref<number>(0.1),},
-    decay: {duration: ref<number>(1),},
-    sustain: {velocity: ref<number>(0.4),},
-    release: {duration: ref<number>(0.5)}
+    attack: {duration: 0.1},
+    decay: {duration: 1},
+    sustain: {velocity: 0.4},
+    release: {duration: 0.5}
 }
 
 const wavetable:{label:string, value:any}[] = [
@@ -123,7 +123,7 @@ const wavetable:{label:string, value:any}[] = [
     { label: "Custom", value: "custom" },
 ]
 
-const waveform:Ref<OscillatorType> = ref<OscillatorType>('sine');
+const waveform = ref<OscillatorType>('sine');
 
 function connectGain(audioNode: AudioNode) {
     audioNode.connect(gainNode);
@@ -133,10 +133,10 @@ function connectGain(audioNode: AudioNode) {
 
 <template>
     <div id="control">
-        <BaseSlider :target="gainNode.gain" :min=0 :max=1 :step=0.001 />
-        <BaseSlider :target="reverb.duration" :min=0.001 :max=5 :step=0.001 />
-        <BaseSlider :target="reverb.decay" :min=0 :max=10 :step=0.001 />
-        <!-- <BaseSelect :target="waveform" :items="wavetable" /> -->
+        <BaseSlider v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
+        <BaseSlider v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
+        <BaseSlider v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
+        <BaseSelect v-model="waveform" :items="wavetable" />
         <Envelope :envelope="envelope"  />
         <Analyser :analyser-node="analyserNode"/>
     </div>

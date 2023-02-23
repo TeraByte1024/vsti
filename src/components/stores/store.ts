@@ -44,7 +44,7 @@ const frequencyTable:{[index:string]:number} = {
 
 const store = createStore({
   state: {
-    audioContext: audioContext,
+    audioContext,
     frequencyTable: frequencyTable
   },
   getters: {

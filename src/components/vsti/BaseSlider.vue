@@ -2,9 +2,7 @@
 import { ref } from 'vue';
 
 const props = withDefaults(defineProps<{
-    target: {
-        value: number
-    },
+    modelValue: number,
     min?: number,
     max?: number,
     step?: number,
@@ -14,10 +12,14 @@ const props = withDefaults(defineProps<{
     step: 0.001,
 });
 
-const amount = ref<number>(props.target.value);
+const emit = defineEmits<{
+    (e: 'update:modelValue', value: number): void
+}>();
+
+const amount = ref<number>(props.modelValue);
 
 function update() {
-    props.target.value = amount.value;
+    emit('update:modelValue', amount.value);
 }
 
 </script>
