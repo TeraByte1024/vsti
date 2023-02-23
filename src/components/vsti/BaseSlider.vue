@@ -25,10 +25,8 @@ function update() {
 </script>
 
 <template>
-    <div class="slider">
-        <input type="range" v-model.number="amount" v-bind="props" @input="update" />
-        <div>{{ amount }}</div>
-    </div>
+    <input type="range" v-model.number="amount" v-bind="props" @input="update" />
+    <div>{{ amount }}</div>
 </template>
 
 <style scoped>

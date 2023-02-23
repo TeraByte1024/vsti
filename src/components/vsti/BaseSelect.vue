@@ -22,12 +22,9 @@ function update() {
 </script>
 
 <template>
-    <div class="select">
-        <select name="items" v-model="selected" @change="update">
-            <option v-for="item in props.items" :key="item.label" v-bind="item"></option>
-        </select>
-    </div>
-    
+    <select name="items" v-model="selected" @change="update">
+        <option v-for="item in props.items" :key="item.label" v-bind="item"></option>
+    </select>
 </template>
 
 <style scoped>

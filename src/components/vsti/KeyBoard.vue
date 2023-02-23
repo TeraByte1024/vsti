@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, watch, reactive, ref } from 'vue';
-import type { Ref } from 'vue';
 import store from '@components/stores/store';
 import { KeyBind, EnvelopeProps } from '@interfaces/vsti';
 import BaseSlider from '@components/vsti/BaseSlider.vue';
@@ -137,7 +136,7 @@ function connectGain(audioNode: AudioNode) {
         <BaseSlider v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
         <BaseSlider v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
         <BaseSelect v-model="waveform" :items="wavetable" />
-        <Envelope :envelope="envelope"  />
+        <Envelope :envelope="envelope" />
         <Analyser :analyser-node="analyserNode"/>
     </div>
     <div id="piano">
