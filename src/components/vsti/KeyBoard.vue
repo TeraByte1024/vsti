@@ -128,10 +128,10 @@ function connectGain(audioNode: AudioNode) {
 
 <template>
     <div id="control">
-        <BaseSlider v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
-        <BaseSlider v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
-        <BaseSlider v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
-        <BaseSelect v-model="waveform" :items="wavetable" />
+        <BaseSelect :label="'Waveform'" v-model="waveform" :items="wavetable" />
+        <BaseSlider :label="'Volume'" v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
+        <BaseSlider :label="'Reverb Duration'" v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
+        <BaseSlider :label="'Reverb Decay'" v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
         <Envelope :envelope="envelope" />
         <Analyser :analyser-node="analyserNode"/>
     </div>
@@ -152,8 +152,10 @@ function connectGain(audioNode: AudioNode) {
 
 <style scoped>
 #control {
-    display: inline-block;
-    margin-bottom: 20px;
+    display: block;
 }
 
+#control * {
+    margin-bottom: 10px;
+}
 </style>

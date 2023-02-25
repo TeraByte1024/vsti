@@ -77,10 +77,10 @@ function drawRelease() {
         <canvas id="envelope" width="400" height="100"></canvas>
     </div>
     <div id="controller">
-        <BaseSlider v-model="envelope.attack.duration" :min=0 :max=2 />
-        <BaseSlider v-model="envelope.decay.duration" :min=0 :max=5 />
-        <BaseSlider v-model="envelope.sustain.velocity" :min=0 :max=1 />
-        <BaseSlider v-model="envelope.release.duration" :min=0 :max=5 />
+        <BaseSlider :label="'Attack'" v-model="envelope.attack.duration" :min=0 :max=2 />
+        <BaseSlider :label="'Decay'" v-model="envelope.decay.duration" :min=0 :max=5 />
+        <BaseSlider :label="'Sustain'" v-model="envelope.sustain.velocity" :min=0 :max=1 />
+        <BaseSlider :label="'Release'" v-model="envelope.release.duration" :min=0 :max=5 />
     </div>
 </template>
 
