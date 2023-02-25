@@ -4,7 +4,7 @@ import * as path from "path";
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/absproxy/3000',
+  base: '/vsti/',
   resolve: {
     alias: [
       { find: '@components', replacement: path.resolve(__dirname, 'src/components') },
@@ -13,6 +13,7 @@ export default defineConfig({
     ]
   },
   server: {
+    host: '0.0.0.0',
     port: 3000
   }
 })
