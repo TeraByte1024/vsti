@@ -55,6 +55,7 @@ onMounted(()=> {
     props.keyBinds.forEach(keyBind => {
         releasedKey(keyBind.key);
     });
+    refreshImpulseResponse(getImpulseResponse(reverb.value));
 });
 
 function connectNodes() {
@@ -82,14 +83,14 @@ function connectNodeAt(index:number) {
     node.connect(next);
 }
 
-const reverb:{duration:number, decay:number} = {
+const reverb = ref<{duration:number, decay:number}>({
     duration: 2.5,
     decay: 5
-}
-
-watch(()=>getImpulseResponse(reverb), newImpulseResponse=> {
-    refreshImpulseResponse(newImpulseResponse);
 });
+
+watch(()=>reverb.value, newReverb=> {
+    refreshImpulseResponse(getImpulseResponse(newReverb));
+}, { deep: true });
 
 function refreshImpulseResponse(impulseResponse: AudioBuffer) {
     convolverNode.buffer = impulseResponse;
