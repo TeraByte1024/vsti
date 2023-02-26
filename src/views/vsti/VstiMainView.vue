@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import KeyBoard from '@components/vsti/KeyBoard.vue';
+import KeyBoard from '@components/synth/KeyBoard.vue';
 import { KeyBind } from '@interfaces/vsti';
 
 const keyNotes: KeyBind[] = [
