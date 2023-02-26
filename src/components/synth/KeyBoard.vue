@@ -2,11 +2,11 @@
 import { onMounted, watch, reactive, ref } from 'vue';
 import store from '@components/stores/store';
 import { KeyBind, EnvelopeProps } from '@interfaces/vsti';
-import BaseSlider from '@components/vsti/BaseSlider.vue';
-import BaseSelect from '@components/vsti/BaseSelect.vue';
-import Envelope from '@components/vsti/Envelope.vue';
-import Analyser from '@components/vsti/Analyser.vue';
-import KeyNote from '@components/vsti/KeyNote.vue';
+import BaseSlider from '@components/base/BaseSlider.vue';
+import BaseSelect from '@components/base/BaseSelect.vue';
+import Envelope from '@components/base/Envelope.vue';
+import Analyser from '@components/base/Analyser.vue';
+import KeyNote from '@components/synth/KeyNote.vue';
 
 const props = defineProps<{
     keyBinds: KeyBind[]
@@ -55,6 +55,7 @@ onMounted(()=> {
     props.keyBinds.forEach(keyBind => {
         releasedKey(keyBind.key);
     });
+    refreshImpulseResponse(getImpulseResponse(reverb.value));
 });
 
 function connectNodes() {
@@ -82,14 +83,14 @@ function connectNodeAt(index:number) {
     node.connect(next);
 }
 
-const reverb:{duration:number, decay:number} = {
+const reverb = ref<{duration:number, decay:number}>({
     duration: 2.5,
     decay: 5
-}
-
-watch(()=>getImpulseResponse(reverb), newImpulseResponse=> {
-    refreshImpulseResponse(newImpulseResponse);
 });
+
+watch(()=>reverb.value, newReverb=> {
+    refreshImpulseResponse(getImpulseResponse(newReverb));
+}, { deep: true });
 
 function refreshImpulseResponse(impulseResponse: AudioBuffer) {
     convolverNode.buffer = impulseResponse;
@@ -128,10 +129,10 @@ function connectGain(audioNode: AudioNode) {
 
 <template>
     <div id="control">
-        <BaseSlider v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
-        <BaseSlider v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
-        <BaseSlider v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
-        <BaseSelect v-model="waveform" :items="wavetable" />
+        <BaseSelect :label="'Waveform'" v-model="waveform" :items="wavetable" />
+        <BaseSlider :label="'Volume'" v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
+        <BaseSlider :label="'Reverb Duration'" v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
+        <BaseSlider :label="'Reverb Decay'" v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
         <Envelope :envelope="envelope" />
         <Analyser :analyser-node="analyserNode"/>
     </div>
@@ -152,8 +153,10 @@ function connectGain(audioNode: AudioNode) {
 
 <style scoped>
 #control {
-    display: inline-block;
-    margin-bottom: 20px;
+    display: block;
 }
 
+#control * {
+    margin-bottom: 10px;
+}
 </style>
