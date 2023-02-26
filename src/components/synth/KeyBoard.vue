@@ -2,11 +2,11 @@
 import { onMounted, watch, reactive, ref } from 'vue';
 import store from '@components/stores/store';
 import { KeyBind, EnvelopeProps } from '@interfaces/vsti';
-import BaseSlider from '@components/vsti/BaseSlider.vue';
-import BaseSelect from '@components/vsti/BaseSelect.vue';
-import Envelope from '@components/vsti/Envelope.vue';
-import Analyser from '@components/vsti/Analyser.vue';
-import KeyNote from '@components/vsti/KeyNote.vue';
+import BaseSlider from '@components/base/BaseSlider.vue';
+import BaseSelect from '@components/base/BaseSelect.vue';
+import Envelope from '@components/base/Envelope.vue';
+import Analyser from '@components/base/Analyser.vue';
+import KeyNote from '@components/synth/KeyNote.vue';
 
 const props = defineProps<{
     keyBinds: KeyBind[]

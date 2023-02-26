@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { EnvelopeProps } from '@interfaces/vsti';
-import BaseSlider from '@components/vsti/BaseSlider.vue';
+import BaseSlider from '@components/base/BaseSlider.vue';
 
 const props = defineProps<{
     envelope: EnvelopeProps
