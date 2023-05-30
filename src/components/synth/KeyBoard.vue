@@ -1,162 +1,185 @@
 <script setup lang="ts">
-import { onMounted, watch, reactive, ref } from 'vue';
-import store from '@components/stores/store';
-import { KeyBind, EnvelopeProps } from '@interfaces/vsti';
-import BaseSlider from '@components/base/BaseSlider.vue';
-import BaseSelect from '@components/base/BaseSelect.vue';
-import Envelope from '@components/base/Envelope.vue';
-import Analyser from '@components/base/Analyser.vue';
-import KeyNote from '@components/synth/KeyNote.vue';
+import { onMounted, watch, reactive, ref } from "vue";
+import { useSynthStore } from "@components/stores/synth";
+import { KeyBind, EnvelopeProps } from "@interfaces/vsti";
+import BaseSlider from "@components/base/BaseSlider.vue";
+import BaseSelect from "@components/base/BaseSelect.vue";
+import Envelope from "@components/base/Envelope.vue";
+import Analyser from "@components/base/Analyser.vue";
+import KeyNote from "@components/synth/KeyNote.vue";
 
 const props = defineProps<{
-    keyBinds: KeyBind[]
+  keyBinds: KeyBind[];
 }>();
 
-const frequency = store.state.frequencyTable;
+const store = useSynthStore();
+const frequency = store.frequencyTable;
 
-const isPlaying:{[index:string]: boolean} = reactive({});
+const isPlaying: { [index: string]: boolean } = reactive({});
 
 function bindkeyBoardEventListener() {
-    const keyBoardListener = document.body;
-    keyBoardListener.onkeydown = (event) => {
-        if(event.repeat) return;
-        pressedKey(event.key);
-    };
-    keyBoardListener.onkeyup = (event) => {
-        releasedKey(event.key);
-    };
+  const keyBoardListener = document.body;
+  keyBoardListener.onkeydown = (event) => {
+    if (event.repeat) return;
+    pressedKey(event.key);
+  };
+  keyBoardListener.onkeyup = (event) => {
+    releasedKey(event.key);
+  };
 }
 
 function pressedKey(key: string) {
-    isPlaying[key] = true;
+  isPlaying[key] = true;
 }
 
 function releasedKey(key: string) {
-    isPlaying[key] = false;
+  isPlaying[key] = false;
 }
 
-const audioContext = store.state.audioContext;
+const audioContext = store.audioContext;
 const gainNode = audioContext.createGain();
 gainNode.gain.value = 0.3;
 const convolverNode = audioContext.createConvolver();
 const analyserNode = audioContext.createAnalyser();
 
-const nodes = ref<AudioNode[]>([
-    gainNode,
-    convolverNode,
-    analyserNode,
-]);
+const nodes = ref<AudioNode[]>([gainNode, convolverNode, analyserNode]);
 
-onMounted(()=> {
-    store.state.audioContext.resume();
-    bindkeyBoardEventListener();
-    connectNodes();
-    gainNode.connect(analyserNode);
-    props.keyBinds.forEach(keyBind => {
-        releasedKey(keyBind.key);
-    });
-    refreshImpulseResponse(getImpulseResponse(reverb.value));
+onMounted(() => {
+  store.audioContext.resume();
+  bindkeyBoardEventListener();
+  connectNodes();
+  gainNode.connect(analyserNode);
+  props.keyBinds.forEach((keyBind) => {
+    releasedKey(keyBind.key);
+  });
+  refreshImpulseResponse(getImpulseResponse(reverb.value));
 });
 
 function connectNodes() {
-    nodes.value.forEach((node, index) => {
-        const nextNode = nodes.value[index+1] || audioContext.destination;
-        node.connect(nextNode);
-    });
+  nodes.value.forEach((node, index) => {
+    const nextNode = nodes.value[index + 1] || audioContext.destination;
+    node.connect(nextNode);
+  });
 }
 
-function addNodeAt(index:number, node:AudioNode) {
-    nodes.value.splice(index, 0, node);
-    connectNodeAt(index);
+function addNodeAt(index: number, node: AudioNode) {
+  nodes.value.splice(index, 0, node);
+  connectNodeAt(index);
 }
 
-function replaceNodeAt(index:number, node:AudioNode) {
-    nodes.value[index] = node;
-    connectNodeAt(index);
+function replaceNodeAt(index: number, node: AudioNode) {
+  nodes.value[index] = node;
+  connectNodeAt(index);
 }
 
-function connectNodeAt(index:number) {
-    const prev = nodes.value[index-1];
-    const node = nodes.value[index];
-    const next = nodes.value[index+1] || audioContext.destination;
-    prev?.connect(node);
-    node.connect(next);
+function connectNodeAt(index: number) {
+  const prev = nodes.value[index - 1];
+  const node = nodes.value[index];
+  const next = nodes.value[index + 1] || audioContext.destination;
+  prev?.connect(node);
+  node.connect(next);
 }
 
-const reverb = ref<{duration:number, decay:number}>({
-    duration: 2.5,
-    decay: 5
+const reverb = ref<{ duration: number; decay: number }>({
+  duration: 2.5,
+  decay: 5,
 });
 
-watch(()=>reverb.value, newReverb=> {
+watch(
+  () => reverb.value,
+  (newReverb) => {
     refreshImpulseResponse(getImpulseResponse(newReverb));
-}, { deep: true });
+  },
+  { deep: true }
+);
 
 function refreshImpulseResponse(impulseResponse: AudioBuffer) {
-    convolverNode.buffer = impulseResponse;
+  convolverNode.buffer = impulseResponse;
 }
 
-function getImpulseResponse(reverb: {duration:number, decay:number}) {
-    const length = audioContext.sampleRate * reverb.duration;
-    const impulse = audioContext.createBuffer(1, length, audioContext.sampleRate);
-    const IRArray = impulse.getChannelData(0);
-    for(let i=0;i<length;i++) IRArray[i] = (2*Math.random()-1)*Math.pow(1-i/length, reverb.decay);
-    return impulse;
+function getImpulseResponse(reverb: { duration: number; decay: number }) {
+  const length = audioContext.sampleRate * reverb.duration;
+  const impulse = audioContext.createBuffer(1, length, audioContext.sampleRate);
+  const IRArray = impulse.getChannelData(0);
+  for (let i = 0; i < length; i++)
+    IRArray[i] =
+      (2 * Math.random() - 1) * Math.pow(1 - i / length, reverb.decay);
+  return impulse;
 }
 
 const envelope: EnvelopeProps = {
-    attack: {duration: 0.1},
-    decay: {duration: 1},
-    sustain: {velocity: 0.4},
-    release: {duration: 0.5}
-}
+  attack: { duration: 0.1 },
+  decay: { duration: 1 },
+  sustain: { velocity: 0.4 },
+  release: { duration: 0.5 },
+};
 
-const wavetable:{label:string, value:any}[] = [
-    { label: "Sine", value: "sine" },
-    { label: "Square", value: "square" },
-    { label: "Saw", value: "sawtooth" },
-    { label: "Triangle", value: "triangle" },
-    { label: "Custom", value: "custom" },
-]
+const wavetable: { label: string; value: any }[] = [
+  { label: "Sine", value: "sine" },
+  { label: "Square", value: "square" },
+  { label: "Saw", value: "sawtooth" },
+  { label: "Triangle", value: "triangle" },
+  { label: "Custom", value: "custom" },
+];
 
-const waveform = ref<OscillatorType>('sine');
+const waveform = ref<OscillatorType>("sine");
 
 function connectGain(audioNode: AudioNode) {
-    audioNode.connect(gainNode);
+  audioNode.connect(gainNode);
 }
-
 </script>
 
 <template>
-    <div id="control">
-        <BaseSelect :label="'Waveform'" v-model="waveform" :items="wavetable" />
-        <BaseSlider :label="'Volume'" v-model="gainNode.gain.value" :min=0 :max=1 :step=0.001 />
-        <BaseSlider :label="'Reverb Duration'" v-model="reverb.duration" :min=0.001 :max=5 :step=0.001 />
-        <BaseSlider :label="'Reverb Decay'" v-model="reverb.decay" :min=0 :max=10 :step=0.001 />
-        <Envelope :envelope="envelope" />
-        <Analyser :analyser-node="analyserNode"/>
-    </div>
-    <div id="piano">
-        <KeyNote v-for="keyBind in keyBinds"
-            :keyBind="keyBind.key"
-            :pitch="keyBind.pitch"
-            :waveform="waveform"
-            :frequency="frequency[keyBind.pitch]"
-            :envelope="envelope"
-            :isPlaying="isPlaying[keyBind.key]"
-            @mousedown="pressedKey(keyBind.key)" @mouseup="releasedKey(keyBind.key)"
-            @touchstart="pressedKey(keyBind.key)" @touchend="releasedKey(keyBind.key)"
-            @update-node="connectGain"
-        />
-    </div>
+  <div id="control">
+    <BaseSelect :label="'Waveform'" v-model="waveform" :items="wavetable" />
+    <BaseSlider
+      :label="'Volume'"
+      v-model="gainNode.gain.value"
+      :min="0"
+      :max="1"
+      :step="0.001"
+    />
+    <BaseSlider
+      :label="'Reverb Duration'"
+      v-model="reverb.duration"
+      :min="0.001"
+      :max="5"
+      :step="0.001"
+    />
+    <BaseSlider
+      :label="'Reverb Decay'"
+      v-model="reverb.decay"
+      :min="0"
+      :max="10"
+      :step="0.001"
+    />
+    <Envelope :envelope="envelope" />
+    <Analyser :analyser-node="analyserNode" />
+  </div>
+  <div id="piano">
+    <KeyNote
+      v-for="keyBind in keyBinds"
+      :keyBind="keyBind.key"
+      :pitch="keyBind.pitch"
+      :waveform="waveform"
+      :frequency="frequency[keyBind.pitch]"
+      :envelope="envelope"
+      :isPlaying="isPlaying[keyBind.key]"
+      @mousedown="pressedKey(keyBind.key)"
+      @mouseup="releasedKey(keyBind.key)"
+      @touchstart="pressedKey(keyBind.key)"
+      @touchend="releasedKey(keyBind.key)"
+      @update-node="connectGain"
+    />
+  </div>
 </template>
 
 <style scoped>
 #control {
-    display: block;
+  display: block;
 }
 
 #control * {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 </style>
