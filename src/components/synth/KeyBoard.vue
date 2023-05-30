@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, watch, reactive, ref } from "vue";
-import { useSynthStore } from "@components/stores/synth";
-import { KeyBind, EnvelopeProps } from "@interfaces/vsti";
+import { useSynthStore } from "@store/synth";
+import { KeyBind, EnvelopeProps } from "@model/vsti";
 import BaseSlider from "@components/base/BaseSlider.vue";
 import BaseSelect from "@components/base/BaseSelect.vue";
 import Envelope from "@components/base/Envelope.vue";

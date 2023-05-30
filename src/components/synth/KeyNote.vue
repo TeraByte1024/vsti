@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from "vue";
-import { useSynthStore } from "@components/stores/synth";
-import { EnvelopeProps } from "@interfaces/vsti";
+import { useSynthStore } from "@store/synth";
+import { EnvelopeProps } from "@model/vsti";
 
 const props = withDefaults(
   defineProps<{
