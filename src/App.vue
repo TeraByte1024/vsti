@@ -1,5 +1,5 @@
 <script setup>
-import VstiMainView from './views/vsti/VstiMainView.vue';
+import VstiMainView from "./views/vsti/VstiMainView.vue";
 </script>
 
 <template>
