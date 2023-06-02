@@ -94,31 +94,17 @@ function endEnvelope() {
 </script>
 
 <template>
-  <div class="keyNote" :class="{ playing: props.isPlaying }">
-    <span id="pitch">{{ pitch }}</span>
+  <div
+    class="h-20 w-10 m-0.5 rounded bg-secondary text-center text-primary"
+    :class="{ playing: props.isPlaying }"
+  >
+    {{ pitch }}
   </div>
 </template>
 
 <style scoped>
-.keyNote {
-  display: inline-block;
-  height: 60px;
-  width: 40px;
-  text-align: center;
-  margin: 1px;
-  border-radius: 5px;
-  color: #06113c;
-  background-color: #eeeeee;
-}
-
-#pitch {
-  display: inline-block;
-  padding-bottom: 0px;
-  padding-top: 75%;
-}
-
 .playing {
-  background-color: #06113c;
-  color: white;
+  background-color: #354649;
+  color: #e5edee;
 }
 </style>
