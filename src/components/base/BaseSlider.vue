@@ -1,66 +1,68 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from "vue";
 
-const props = withDefaults(defineProps<{
-    label: string,
-    modelValue: number,
-    min?: number,
-    max?: number,
-    step?: number,
-}>(), {
+const props = withDefaults(
+  defineProps<{
+    modelValue: number;
+    min?: number;
+    max?: number;
+    step?: number;
+  }>(),
+  {
     min: 0,
     max: 1,
     step: 0.001,
-});
+  }
+);
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: number): void
+  (e: "update:modelValue", value: number): void;
 }>();
 
-const amount = ref<number>(props.modelValue);
+// const thumbElement = ref<HTMLInputElement>();
+const displayElement = ref<HTMLSpanElement>();
 
-function update() {
-    emit('update:modelValue', amount.value);
+const amount = ref<number>(props.modelValue);
+const isFocused = ref(false);
+
+function input(event: MouseEvent) {
+  //   const event = payload as ;
+  isFocused.value = true;
+  if (!displayElement.value) return;
+  console.log(event.clientX);
+  displayElement.value.style.top = event.clientX + "px";
+  displayElement.value.style.left = event.clientY + "px";
+  // (thumbElement.value?.offsetLeft ?? 0)?.toString() + "px";
+  //   displayElement.value.style.left =
+  //     (thumbElement.value?.offsetLeft ?? 0)?.toString() + "px";
+  emit("update:modelValue", amount.value);
 }
 
+const change = () => {
+  isFocused.value = false;
+};
+onMounted(async () => {
+  //   thumbElement.value = (await document.querySelector(
+  //     "::-webkit-slider-thumb"
+  //   )) as HTMLInputElement;
+});
 </script>
 
 <template>
-    <div id="wrapper">
-        <div id="label">{{ label }}</div>
-        <input type="range" id="slider"
-            v-model.number="amount" v-bind="props" @input="update"
-        />
-        <div id="value">{{ amount }}</div>
-    </div>
+  <input
+    type="range"
+    v-model.number="amount"
+    v-bind="props"
+    @input="(event:Event) => input(event as MouseEvent)"
+    @change="change"
+    class="flex-grow w-full bg-secondary text-center"
+  />
+  <!-- <span
+    ref="displayElement"
+    :class="{ hidden: !isFocused }"
+    class="absolute px-2 py-1 border rounded-full bg-secondary text-xs"
+    >{{ amount }}</span
+  > -->
 </template>
 
-<style scoped>
-* {
-    display: inline-block;
-    box-sizing: border-box;
-}
-
-#wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-#label {
-    width: 30%;
-    padding-right: 20px;
-    text-align: right;
-}
-
-#slider {
-    width: 40%;
-    min-width: 100px;
-    margin: auto 0;
-}
-
-#value {
-    width: 30%;
-    padding-left: 20px;
-    text-align: left;
-}
-</style>
+<style scoped></style>

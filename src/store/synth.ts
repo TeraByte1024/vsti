@@ -1,50 +1,105 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 
+import { EnvelopeProps } from "@model/vsti";
+
 export const useSynthStore = defineStore("synth", () => {
   const audioContext = ref(new AudioContext());
-  const frequencyTable: { [index: string]: number } = {
-    C3: 130.81,
-    "C#3": 138.59,
-    D3: 146.83,
-    "D#3": 155.56,
-    E3: 164.81,
-    F3: 174.61,
-    "F#3": 185.0,
-    G3: 196.0,
-    "G#3": 207.65,
-    A3: 220.0,
-    "A#3": 233.08,
-    B3: 246.94,
-    C4: 261.63,
-    "C#4": 277.18,
-    D4: 293.66,
-    "D#4": 311.13,
-    E4: 329.63,
-    F4: 349.23,
-    "F#4": 369.99,
-    G4: 392.0,
-    "G#4": 415.3,
-    A4: 440.0,
-    "A#4": 466.16,
-    B4: 493.88,
-    C5: 523.25,
-    "C#5": 554.37,
-    D5: 587.33,
-    "D#5": 622.25,
-    E5: 659.25,
-    F5: 698.46,
-    "F#5": 739.99,
-    G5: 783.99,
-    "G#5": 830.61,
-    A5: 880.0,
-    "A#5": 932.33,
-    B5: 987.77,
-    C6: 1046.5,
+
+  const wavetable: { label: string; value: any }[] = [
+    { label: "Sine", value: "sine" },
+    { label: "Square", value: "square" },
+    { label: "Saw", value: "sawtooth" },
+    { label: "Triangle", value: "triangle" },
+    { label: "Custom", value: "custom" },
+  ];
+
+  const waveform = ref<OscillatorType>("sine");
+
+  const envelope: EnvelopeProps = {
+    attack: { duration: 0.1 },
+    decay: { duration: 1 },
+    sustain: { velocity: 0.4 },
+    release: { duration: 0.5 },
   };
 
+  const gainNode = audioContext.value.createGain();
+  gainNode.gain.value = 0.3;
+  const convolverNode = audioContext.value.createConvolver();
+  const analyserNode = audioContext.value.createAnalyser();
+
+  const reverb = ref<{ duration: number; decay: number }>({
+    duration: 2.5,
+    decay: 5,
+  });
+
+  const nodes = ref<AudioNode[]>([gainNode, convolverNode, analyserNode]);
+
+  function connectGain(audioNode: AudioNode) {
+    audioNode.connect(gainNode);
+  }
+
+  function connectNodes() {
+    nodes.value.forEach((node, index) => {
+      const nextNode = nodes.value[index + 1] || audioContext.value.destination;
+      node.connect(nextNode);
+    });
+  }
+
+  function addNodeAt(index: number, node: AudioNode) {
+    nodes.value.splice(index, 0, node);
+    connectNodeAt(index);
+  }
+
+  function replaceNodeAt(index: number, node: AudioNode) {
+    nodes.value[index] = node;
+    connectNodeAt(index);
+  }
+
+  function connectNodeAt(index: number) {
+    const prev = nodes.value[index - 1];
+    const node = nodes.value[index];
+    const next = nodes.value[index + 1] || audioContext.value.destination;
+    prev?.connect(node);
+    node.connect(next);
+  }
+
+  function refreshImpulseResponse(reverb: { duration: number; decay: number }) {
+    convolverNode.buffer = getImpulseResponse(reverb);
+  }
+
+  function getImpulseResponse(reverb: { duration: number; decay: number }) {
+    const length = audioContext.value.sampleRate * reverb.duration;
+    const impulse = audioContext.value.createBuffer(
+      1,
+      length,
+      audioContext.value.sampleRate
+    );
+    const IRArray = impulse.getChannelData(0);
+    for (let i = 0; i < length; i++)
+      IRArray[i] =
+        (2 * Math.random() - 1) * Math.pow(1 - i / length, reverb.decay);
+    return impulse;
+  }
+
+  function start() {
+    audioContext.value.resume();
+    connectNodes();
+  }
   return {
     audioContext,
-    frequencyTable,
+    wavetable,
+    waveform,
+    envelope,
+    reverb,
+    gainNode,
+    convolverNode,
+    analyserNode,
+    nodes,
+
+    start,
+    refreshImpulseResponse,
+    getImpulseResponse,
+    connectGain,
   };
 });

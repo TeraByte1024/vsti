@@ -1,34 +1,36 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { EnvelopeProps } from "@model/vsti";
-import BaseSlider from "@components/base/BaseSlider.vue";
+import { ref, onMounted } from "vue";
+import { useSynthStore } from "@store/synth";
 
 const props = defineProps<{
-  envelope: EnvelopeProps;
+  width: number;
+  height: number;
 }>();
 
-const envelope = props.envelope;
+const synth = useSynthStore();
+const envelope = synth.envelope;
 
-let canvas: HTMLCanvasElement;
+const canvasElement = ref<HTMLCanvasElement>();
 let canvasContext: CanvasRenderingContext2D;
 
 let x: number;
 let y: number;
 
 onMounted(() => {
-  canvas = document.getElementById("envelope") as HTMLCanvasElement;
-  canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
+  canvasContext = canvasElement.value?.getContext(
+    "2d"
+  ) as CanvasRenderingContext2D;
   draw();
 });
 
 function draw() {
   requestAnimationFrame(draw);
 
-  canvasContext.fillStyle = "#EEEEEE";
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  canvasContext.fillStyle = "#E5EDEE";
+  canvasContext.fillRect(0, 0, props.width, props.height);
 
   canvasContext.lineWidth = 2;
-  canvasContext.strokeStyle = "#00092C";
+  canvasContext.strokeStyle = "#758295";
 
   canvasContext.beginPath();
 
@@ -41,7 +43,7 @@ function draw() {
 
 function drawAttack() {
   x = 0;
-  y = canvas.height;
+  y = props.height;
   canvasContext.moveTo(x * 200, y);
 
   x = envelope.attack.duration;
@@ -55,51 +57,28 @@ function drawDecay() {
   canvasContext.moveTo(x * 200, y);
 
   x += envelope.decay.duration;
-  y = canvas.height - envelope.sustain.velocity * 100;
+  y = props.height - envelope.sustain.velocity * 100;
   canvasContext.lineTo(x * 200, y);
 }
 
 function drawRelease() {
   x = envelope.attack.duration + envelope.decay.duration;
-  y = canvas.height - envelope.sustain.velocity * 100;
+  y = props.height - envelope.sustain.velocity * 100;
   canvasContext.moveTo(x * 200, y);
 
   x += envelope.release.duration;
-  y = canvas.height;
+  y = props.height;
   canvasContext.lineTo(x * 200, y);
 }
 </script>
 
 <template>
-  <div id="graph">
-    <canvas id="envelope" width="400" height="100"></canvas>
-  </div>
-  <div id="controller">
-    <BaseSlider
-      :label="'Attack'"
-      v-model="envelope.attack.duration"
-      :min="0"
-      :max="2"
-    />
-    <BaseSlider
-      :label="'Decay'"
-      v-model="envelope.decay.duration"
-      :min="0"
-      :max="5"
-    />
-    <BaseSlider
-      :label="'Sustain'"
-      v-model="envelope.sustain.velocity"
-      :min="0"
-      :max="1"
-    />
-    <BaseSlider
-      :label="'Release'"
-      v-model="envelope.release.duration"
-      :min="0"
-      :max="5"
-    />
-  </div>
+  <canvas
+    ref="canvasElement"
+    :width="width"
+    :height="height"
+    class="w-full h-28"
+  ></canvas>
 </template>
 
 <style scoped></style>
