@@ -18,6 +18,103 @@ export interface EnvelopeProps {
   };
 }
 
+export interface ReverbProps {
+  duration: number;
+  decay: number;
+}
+
+export class Vsti {
+  audioContext: AudioContext;
+  waveform: OscillatorType = "sine";
+  envelope: EnvelopeProps = {
+    attack: { duration: 0.1 },
+    decay: { duration: 1 },
+    sustain: { velocity: 0.4 },
+    release: { duration: 0.5 },
+  };
+  reverb: ReverbProps = {
+    duration: 2.5,
+    decay: 5,
+  };
+
+  modules: Module[] = [];
+
+  constructor(audioContext: AudioContext) {
+    this.audioContext = audioContext;
+  }
+}
+
+abstract class Module {
+  audioContext: AudioContext;
+  abstract input: AudioNode;
+  abstract output: AudioNode;
+
+  constructor(audioContext: AudioContext) {
+    this.audioContext = audioContext;
+  }
+
+  connect(next: Module) {
+    this.output.connect(next.input);
+  }
+}
+
+export class GainModule extends Module {
+  input: GainNode;
+  output: GainNode;
+
+  gainNode: GainNode;
+
+  constructor(audioContext: AudioContext) {
+    super(audioContext);
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 0.3;
+    this.gainNode = gainNode;
+    this.input = gainNode;
+    this.output = gainNode;
+  }
+}
+
+export class ReverbModule extends Module {
+  input: ConvolverNode;
+  output: ConvolverNode;
+
+  convolverNode: ConvolverNode;
+
+  constructor(audioContext: AudioContext) {
+    super(audioContext);
+    const convolverNode = audioContext.createConvolver();
+    this.convolverNode = convolverNode;
+    this.input = convolverNode;
+    this.output = convolverNode;
+  }
+
+  refreshImpulseResponse(reverb: { duration: number; decay: number }) {
+    this.convolverNode.buffer = this.getImpulseResponse(reverb);
+  }
+
+  getImpulseResponse(reverb: { duration: number; decay: number }) {
+    const length = this.audioContext.sampleRate * reverb.duration;
+    const impulse = this.audioContext.createBuffer(
+      1,
+      length,
+      this.audioContext.sampleRate
+    );
+    const IRArray = impulse.getChannelData(0);
+    for (let i = 0; i < length; i++)
+      IRArray[i] =
+        (2 * Math.random() - 1) * Math.pow(1 - i / length, reverb.decay);
+    return impulse;
+  }
+}
+
+export const wavetable: { label: string; value: any }[] = [
+  { label: "Sine", value: "sine" },
+  { label: "Square", value: "square" },
+  { label: "Saw", value: "sawtooth" },
+  { label: "Triangle", value: "triangle" },
+  { label: "Custom", value: "custom" },
+];
+
 export const frequencyMap: { [index: string]: number } = {
   C3: 130.81,
   "C#3": 138.59,
