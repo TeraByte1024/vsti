@@ -8,31 +8,22 @@ const props = defineProps<{
 }>();
 
 const synth = useSynthStore();
-const analyserNode = synth.analyserNode;
-let bufferLength: number;
-let dataArray: Uint8Array;
+const analyser = synth.analyser;
 const canvasElement = ref<HTMLCanvasElement>();
 let canvasContext: CanvasRenderingContext2D;
 
 onMounted(() => {
-  initializeAnalyserNode();
-  draw();
-});
-
-function initializeAnalyserNode() {
-  analyserNode.fftSize = Math.pow(2, 13);
-  bufferLength = analyserNode.frequencyBinCount;
-  dataArray = new Uint8Array(bufferLength);
   canvasContext = canvasElement.value?.getContext(
     "2d"
   ) as CanvasRenderingContext2D;
-}
+
+  draw();
+});
 
 function draw() {
   requestAnimationFrame(draw);
 
-  analyserNode.getByteTimeDomainData(dataArray);
-
+  analyser.analyserNode.getByteTimeDomainData(analyser.dataArray);
   if (!canvasElement.value) return;
 
   const width = props.width;
@@ -45,12 +36,12 @@ function draw() {
 
   canvasContext.beginPath();
 
-  const sliceWidth = (width * 1.0) / bufferLength;
+  const sliceWidth = (width * 1.0) / analyser.bufferLength;
   let x = 0;
   let y = height / 2;
   canvasContext.moveTo(x, y);
-  for (let i = 0; i < bufferLength; i++) {
-    const v = dataArray[i] / 128.0;
+  for (let i = 0; i < analyser.bufferLength; i++) {
+    const v = analyser.dataArray[i] / 128.0;
     const y = (v * height) / 2;
     canvasContext.lineTo(x, y);
     x += sliceWidth;

@@ -107,6 +107,27 @@ export class ReverbModule extends Module {
   }
 }
 
+export class AnalyserModule extends Module {
+  input: AnalyserNode;
+  output: AnalyserNode;
+
+  analyserNode: AnalyserNode;
+
+  bufferLength: number;
+  dataArray: Uint8Array;
+
+  constructor(audioContext: AudioContext) {
+    super(audioContext);
+    const analyserNode = audioContext.createAnalyser();
+    analyserNode.fftSize = Math.pow(2, 13);
+    this.bufferLength = analyserNode.frequencyBinCount;
+    this.dataArray = new Uint8Array(this.bufferLength);
+    this.analyserNode = analyserNode;
+    this.input = analyserNode;
+    this.output = analyserNode;
+  }
+}
+
 export const wavetable: { label: string; value: any }[] = [
   { label: "Sine", value: "sine" },
   { label: "Square", value: "square" },
