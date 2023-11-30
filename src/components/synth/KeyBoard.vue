@@ -5,6 +5,7 @@ import { frequencyMap, keyBindMap } from "@model/vsti";
 import KeyNote from "@components/synth/KeyNote.vue";
 
 const synth = useSynthStore();
+const vsti = synth.vsti;
 
 const isPlaying: { [index: string]: boolean } = reactive({});
 
@@ -30,24 +31,23 @@ function releasedKey(key: string) {
 const lowerKeyBinds = keyBindMap[0];
 const upperKeyBinds = keyBindMap[1];
 
+function connectGain(audioNode: AudioNode) {
+  audioNode.connect(vsti.masterVolume.input);
+}
+
 onMounted(() => {
   synth.start();
   bindkeyBoardEventListener();
-  synth.gainNode.connect(synth.analyserNode);
+  vsti.output.connect(synth.analyser);
   const keyBinds = [...lowerKeyBinds, ...upperKeyBinds];
   keyBinds.forEach((keyBind) => {
     releasedKey(keyBind.key);
   });
-  synth.refreshImpulseResponse(synth.reverb);
 });
 
-watch(
-  () => synth.reverb,
-  (newReverb) => {
-    synth.refreshImpulseResponse(newReverb);
-  },
-  { deep: true }
-);
+//watch(
+// refreshImpulseResponse(newReverb);
+// );
 </script>
 
 <template>
@@ -57,15 +57,15 @@ watch(
         v-for="keyBind in upperKeyBinds"
         :keyBind="keyBind.key"
         :pitch="keyBind.pitch"
-        :waveform="synth.waveform"
+        :waveform="vsti.waveform"
         :frequency="frequencyMap[keyBind.pitch]"
-        :envelope="synth.envelope"
+        :envelope="vsti.envelope"
         :isPlaying="isPlaying[keyBind.key]"
         @mousedown="pressedKey(keyBind.key)"
         @mouseup="releasedKey(keyBind.key)"
         @touchstart="pressedKey(keyBind.key)"
         @touchend="releasedKey(keyBind.key)"
-        @update-node="synth.connectGain"
+        @update-node="connectGain"
       />
     </div>
     <div class="flex justify-center">
@@ -73,15 +73,15 @@ watch(
         v-for="keyBind in lowerKeyBinds"
         :keyBind="keyBind.key"
         :pitch="keyBind.pitch"
-        :waveform="synth.waveform"
+        :waveform="vsti.waveform"
         :frequency="frequencyMap[keyBind.pitch]"
-        :envelope="synth.envelope"
+        :envelope="vsti.envelope"
         :isPlaying="isPlaying[keyBind.key]"
         @mousedown="pressedKey(keyBind.key)"
         @mouseup="releasedKey(keyBind.key)"
         @touchstart="pressedKey(keyBind.key)"
         @touchend="releasedKey(keyBind.key)"
-        @update-node="synth.connectGain"
+        @update-node="connectGain"
       />
     </div>
   </div>

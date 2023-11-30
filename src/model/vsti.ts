@@ -25,6 +25,8 @@ export interface ReverbProps {
 
 export class Vsti {
   audioContext: AudioContext;
+  output: Module;
+
   waveform: OscillatorType = "sine";
   envelope: EnvelopeProps = {
     attack: { duration: 0.1 },
@@ -32,15 +34,24 @@ export class Vsti {
     sustain: { velocity: 0.4 },
     release: { duration: 0.5 },
   };
-  reverb: ReverbProps = {
-    duration: 2.5,
-    decay: 5,
-  };
 
   modules: Module[] = [];
 
+  masterVolume: GainModule;
+  reverb: ReverbModule;
+
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
+
+    const masterVolume = new GainModule(audioContext);
+    this.masterVolume = masterVolume;
+    this.modules.push(masterVolume);
+
+    const reverbModule = new ReverbModule(audioContext);
+    this.reverb = reverbModule;
+    this.modules.push(reverbModule);
+
+    this.output = masterVolume;
   }
 }
 
@@ -80,20 +91,41 @@ export class ReverbModule extends Module {
 
   convolverNode: ConvolverNode;
 
-  constructor(audioContext: AudioContext) {
+  duration: number = 2.5;
+  decay: number = 5;
+
+  constructor(audioContext: AudioContext, reverb?: ReverbProps) {
     super(audioContext);
+    if (reverb) {
+      this.duration = reverb.duration;
+      this.decay = reverb.decay;
+    }
     const convolverNode = audioContext.createConvolver();
     this.convolverNode = convolverNode;
+    this.refreshImpulseResponse();
     this.input = convolverNode;
     this.output = convolverNode;
   }
 
-  refreshImpulseResponse(reverb: { duration: number; decay: number }) {
-    this.convolverNode.buffer = this.getImpulseResponse(reverb);
+  setDuration(duration: number) {
+    this.duration = duration;
+    this.refreshImpulseResponse();
   }
 
-  getImpulseResponse(reverb: { duration: number; decay: number }) {
-    const length = this.audioContext.sampleRate * reverb.duration;
+  setDecay(decay: number) {
+    this.decay = decay;
+    this.refreshImpulseResponse();
+  }
+
+  refreshImpulseResponse() {
+    this.convolverNode.buffer = this.getImpulseResponse(
+      this.duration,
+      this.decay
+    );
+  }
+
+  getImpulseResponse(duration: number, decay: number) {
+    const length = this.audioContext.sampleRate * duration;
     const impulse = this.audioContext.createBuffer(
       1,
       length,
@@ -101,8 +133,7 @@ export class ReverbModule extends Module {
     );
     const IRArray = impulse.getChannelData(0);
     for (let i = 0; i < length; i++)
-      IRArray[i] =
-        (2 * Math.random() - 1) * Math.pow(1 - i / length, reverb.decay);
+      IRArray[i] = (2 * Math.random() - 1) * Math.pow(1 - i / length, decay);
     return impulse;
   }
 }

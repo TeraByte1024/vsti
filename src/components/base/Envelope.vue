@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const synth = useSynthStore();
-const envelope = synth.envelope;
+const envelope = synth.vsti.envelope;
 
 const canvasElement = ref<HTMLCanvasElement>();
 let canvasContext: CanvasRenderingContext2D;
