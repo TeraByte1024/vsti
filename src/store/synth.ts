@@ -9,6 +9,7 @@ export const useSynthStore = defineStore("synth", () => {
   const analyserModule = new AnalyserModule(audioContext);
 
   vsti.output.connect(analyserModule);
+  analyserModule.connectDestination();
 
   return {
     vsti,

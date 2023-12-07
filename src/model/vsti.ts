@@ -90,6 +90,10 @@ abstract class Module {
   connect(next: Module) {
     this.output.connect(next.input);
   }
+
+  connectDestination() {
+    this.output.connect(this.audioContext.destination);
+  }
 }
 
 export class OscillatorModule extends Module {
@@ -118,6 +122,7 @@ export class OscillatorModule extends Module {
     this.oscNode = oscNode;
     const envelopeGainNode = audioContext.createGain();
     this.envelopeGainNode = envelopeGainNode;
+    oscNode.connect(envelopeGainNode);
     this.input = oscNode;
     this.output = envelopeGainNode;
   }
