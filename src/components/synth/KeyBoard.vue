@@ -11,10 +11,14 @@ function bindKeyPressedEvent() {
   const keyBoardListener = document.body;
   keyBoardListener.onkeydown = (event) => {
     if (event.repeat) return;
-    vsti.play(keyBinds[event.key]);
+    const pitch = keyBinds[event.key];
+    if (pitch == undefined) return;
+    vsti.play(pitch);
   };
   keyBoardListener.onkeyup = (event) => {
-    vsti.stop(keyBinds[event.key]);
+    const pitch = keyBinds[event.key];
+    if (pitch == undefined) return;
+    vsti.stop(pitch);
   };
 }
 
