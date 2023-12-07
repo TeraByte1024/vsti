@@ -35,6 +35,9 @@ export class Vsti {
     release: { duration: 0.5 },
   };
 
+  isPlaying: { [index: string]: boolean } = {};
+  oscModules: { [index: string]: OscillatorModule } = {};
+
   modules: Module[] = [];
 
   masterVolume: GainModule;
@@ -53,6 +56,26 @@ export class Vsti {
 
     this.output = masterVolume;
   }
+
+  play(pitch: string) {
+    console.log(pitch);
+    this.audioContext.resume();
+    const oscModule = new OscillatorModule(
+      this.audioContext,
+      frequencyMap[pitch],
+      this.waveform
+    );
+    oscModule.connect(this.output);
+    this.oscModules[pitch] = oscModule;
+    this.isPlaying[pitch] = true;
+    oscModule.start();
+  }
+
+  stop(pitch: string) {
+    console.log(pitch);
+    this.isPlaying[pitch] = false;
+    this.oscModules[pitch].end();
+  }
 }
 
 abstract class Module {
@@ -66,6 +89,64 @@ abstract class Module {
 
   connect(next: Module) {
     this.output.connect(next.input);
+  }
+}
+
+export class OscillatorModule extends Module {
+  input: OscillatorNode;
+  output: GainNode;
+
+  oscNode: OscillatorNode;
+  envelopeGainNode: GainNode;
+
+  envelope: EnvelopeProps = {
+    attack: { duration: 0.1 },
+    decay: { duration: 1 },
+    sustain: { velocity: 0.4 },
+    release: { duration: 0.5 },
+  };
+
+  constructor(
+    audioContext: AudioContext,
+    frequency?: number,
+    type?: OscillatorType
+  ) {
+    super(audioContext);
+    const oscNode = audioContext.createOscillator();
+    oscNode.frequency.value = frequency ?? 440;
+    oscNode.type = type ?? "sine";
+    this.oscNode = oscNode;
+    const envelopeGainNode = audioContext.createGain();
+    this.envelopeGainNode = envelopeGainNode;
+    this.input = oscNode;
+    this.output = envelopeGainNode;
+  }
+
+  setEnvelope(envelope: EnvelopeProps) {
+    this.envelope = envelope;
+  }
+
+  start() {
+    const { attack, decay, sustain } = this.envelope;
+    const gain = this.envelopeGainNode.gain;
+    let t = this.audioContext.currentTime;
+    gain.setValueAtTime(0, t);
+    t += attack.duration;
+    gain.linearRampToValueAtTime(1, t);
+    t += decay.duration;
+    gain.linearRampToValueAtTime(sustain.velocity, t);
+    this.oscNode.start();
+  }
+
+  end() {
+    const { sustain, release } = this.envelope;
+    const gain = this.envelopeGainNode.gain;
+    let t = this.audioContext.currentTime;
+    gain.cancelScheduledValues(t);
+    gain.setValueAtTime(Math.min(gain.value, sustain.velocity), t);
+    t += release.duration;
+    gain.linearRampToValueAtTime(0, t);
+    this.oscNode.stop(t);
   }
 }
 
@@ -207,46 +288,42 @@ export const frequencyMap: { [index: string]: number } = {
   C6: 1046.5,
 };
 
-export const keyBindMap: KeyBind[][] = [
-  [
-    { key: "z", pitch: "C3" },
-    { key: "s", pitch: "C#3" },
-    { key: "x", pitch: "D3" },
-    { key: "d", pitch: "D#3" },
-    { key: "c", pitch: "E3" },
-    { key: "v", pitch: "F3" },
-    { key: "g", pitch: "F#3" },
-    { key: "b", pitch: "G3" },
-    { key: "h", pitch: "G#3" },
-    { key: "n", pitch: "A3" },
-    { key: "j", pitch: "A#3" },
-    { key: "m", pitch: "B3" },
-    { key: ",", pitch: "C4" },
-    { key: "l", pitch: "C#4" },
-    { key: ".", pitch: "D4" },
-    { key: ";", pitch: "D#4" },
-    { key: "/", pitch: "E4" },
-  ],
-  [
-    { key: "q", pitch: "C4" },
-    { key: "2", pitch: "C#4" },
-    { key: "w", pitch: "D4" },
-    { key: "3", pitch: "D#4" },
-    { key: "e", pitch: "E4" },
-    { key: "r", pitch: "F4" },
-    { key: "5", pitch: "F#4" },
-    { key: "t", pitch: "G4" },
-    { key: "6", pitch: "G#4" },
-    { key: "y", pitch: "A4" },
-    { key: "7", pitch: "A#4" },
-    { key: "u", pitch: "B4" },
-    { key: "i", pitch: "C5" },
-    { key: "9", pitch: "C#5" },
-    { key: "o", pitch: "D5" },
-    { key: "0", pitch: "D#5" },
-    { key: "p", pitch: "E5" },
-    { key: "[", pitch: "F5" },
-    { key: "=", pitch: "F#5" },
-    { key: "]", pitch: "G5" },
-  ],
-];
+export const keyBinds: { [index: string]: string } = {
+  z: "C3",
+  s: "C#3",
+  x: "D3",
+  d: "D#3",
+  c: "E3",
+  v: "F3",
+  g: "F#3",
+  b: "G3",
+  h: "G#3",
+  n: "A3",
+  j: "A#3",
+  m: "B3",
+  ",": "C4",
+  l: "C#4",
+  ".": "D4",
+  ";": "D#4",
+  "/": "E4",
+  q: "C4",
+  "2": "C#4",
+  w: "D4",
+  "3": "D#4",
+  e: "E4",
+  r: "F4",
+  "5": "F#4",
+  t: "G4",
+  "6": "G#4",
+  y: "A4",
+  "7": "A#4",
+  u: "B4",
+  i: "C5",
+  "9": "C#5",
+  o: "D5",
+  "0": "D#5",
+  p: "E5",
+  "[": "F5",
+  "=": "F#5",
+  "]": "G5",
+};

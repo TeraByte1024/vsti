@@ -8,7 +8,8 @@ const props = defineProps<{
 }>();
 
 const synth = useSynthStore();
-const analyser = synth.analyser;
+const vsti = synth.vsti;
+const analyser = synth.analyserModule;
 const canvasElement = ref<HTMLCanvasElement>();
 let canvasContext: CanvasRenderingContext2D;
 

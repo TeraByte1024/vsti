@@ -1,22 +1,17 @@
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 import { defineStore } from "pinia";
 
-import { Vsti, EnvelopeProps, ReverbProps, AnalyserModule } from "@model/vsti";
+import { AnalyserModule, EnvelopeProps, Vsti } from "@model/vsti";
 
 export const useSynthStore = defineStore("synth", () => {
-  const audioContext = ref(new AudioContext());
+  const audioContext = new AudioContext();
+  const vsti = new Vsti(audioContext);
+  const analyserModule = new AnalyserModule(audioContext);
 
-  const vsti = new Vsti(audioContext.value);
-  const analyser = new AnalyserModule(audioContext.value);
-
-  function start() {
-    audioContext.value.resume();
-  }
+  vsti.output.connect(analyserModule);
 
   return {
-    audioContext,
     vsti,
-    analyser,
-    start,
+    analyserModule
   };
 });

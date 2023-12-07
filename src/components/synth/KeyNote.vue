@@ -1,102 +1,27 @@
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
+import { computed } from "vue";
 import { useSynthStore } from "@store/synth";
 import { EnvelopeProps } from "@model/vsti";
 
-const props = withDefaults(
-  defineProps<{
-    keyBind: string;
-    pitch: string;
-    frequency: number;
-    waveform?: OscillatorType;
-    isPlaying: boolean;
-    readonly envelope: EnvelopeProps;
-  }>(),
-  {
-    waveform: "sine",
-    isPlaying: false,
-  }
-);
-
-const emit = defineEmits<{
-  (event: "updateNode", tail: AudioNode): void;
+const props = defineProps<{
+  keyBind: string;
+  pitch: string;
 }>();
 
-const store = useSynthStore();
-const audioContext: AudioContext = store.audioContext;
-let oscNode: OscillatorNode;
-let envelopeGainNode: GainNode;
+const synth = useSynthStore();
+const vsti = synth.vsti;
+const isPlaying = computed(() => vsti.isPlaying[props.pitch]);
 
-onMounted(() => {
-  refreshNode();
-});
-
-function refreshNode() {
-  oscNode = getOscNode();
-  envelopeGainNode = getGainNode();
-  oscNode.connect(envelopeGainNode);
-  emit("updateNode", envelopeGainNode);
-}
-
-function getOscNode(): OscillatorNode {
-  const oscNode = audioContext.createOscillator();
-  oscNode.frequency.value = props.frequency;
-  oscNode.type = props.waveform;
-  return oscNode;
-}
-
-function getGainNode(): GainNode {
-  const gainNode = audioContext.createGain();
-  return gainNode;
-}
-
-watch(
-  () => props.waveform,
-  (waveform: OscillatorType) => {
-    oscNode.type = waveform;
-  }
-);
-
-watch(
-  () => props.isPlaying,
-  (isPlaying: boolean) => {
-    if (isPlaying) {
-      startEnvelope();
-    } else {
-      endEnvelope();
-      refreshNode();
-    }
-  }
-);
-
-function startEnvelope() {
-  const { attack, decay, sustain } = props.envelope;
-  const gain = envelopeGainNode.gain;
-  let t = audioContext.currentTime;
-  gain.setValueAtTime(0, t);
-  t += attack.duration;
-  gain.linearRampToValueAtTime(1, t);
-  t += decay.duration;
-  gain.linearRampToValueAtTime(sustain.velocity, t);
-  oscNode.start();
-}
-
-function endEnvelope() {
-  const { sustain, release } = props.envelope;
-  const gain = envelopeGainNode.gain;
-  let t = audioContext.currentTime;
-  gain.cancelScheduledValues(t);
-  gain.setValueAtTime(Math.min(gain.value, sustain.velocity), t);
-  t += release.duration;
-  gain.linearRampToValueAtTime(0, t);
-  oscNode.stop(t);
-}
 </script>
 
 <template>
   <div
     class="h-20 w-10 m-0.5 rounded bg-secondary text-center text-primary"
-    :class="{ playing: props.isPlaying }"
+    :class="{ playing: isPlaying }"
+    @mousedown="vsti.play(pitch)"
+    @mouseup="vsti.stop(pitch)"
+    @touchstart="vsti.play(pitch)"
+    @touchend="vsti.stop(pitch)"
   >
     {{ pitch }}
   </div>
