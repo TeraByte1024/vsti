@@ -27,11 +27,11 @@ const isFocused = ref(false);
 
 function input(event: MouseEvent) {
   //   const event = payload as ;
-  isFocused.value = true;
-  if (!displayElement.value) return;
-  console.log(event.clientX);
-  displayElement.value.style.top = event.clientX + "px";
-  displayElement.value.style.left = event.clientY + "px";
+  // isFocused.value = true;
+  // if (!displayElement.value) return;
+  // console.log(event.clientX);
+  // displayElement.value.style.top = event.clientX + "px";
+  // displayElement.value.style.left = event.clientY + "px";
   // (thumbElement.value?.offsetLeft ?? 0)?.toString() + "px";
   //   displayElement.value.style.left =
   //     (thumbElement.value?.offsetLeft ?? 0)?.toString() + "px";

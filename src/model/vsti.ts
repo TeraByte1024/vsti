@@ -62,6 +62,7 @@ export class Vsti {
     this.audioContext.resume();
     const oscModule = new OscillatorModule(
       this.audioContext,
+      this.envelope,
       frequencyMap[pitch],
       this.waveform
     );
@@ -100,22 +101,19 @@ export class OscillatorModule extends Module {
   input: OscillatorNode;
   output: GainNode;
 
+  envelope: EnvelopeProps;
+
   oscNode: OscillatorNode;
   envelopeGainNode: GainNode;
 
-  envelope: EnvelopeProps = {
-    attack: { duration: 0.1 },
-    decay: { duration: 1 },
-    sustain: { velocity: 0.4 },
-    release: { duration: 0.5 },
-  };
-
   constructor(
     audioContext: AudioContext,
+    envelope: EnvelopeProps,
     frequency?: number,
     type?: OscillatorType
   ) {
     super(audioContext);
+    this.envelope = envelope;
     const oscNode = audioContext.createOscillator();
     oscNode.frequency.value = frequency ?? 440;
     oscNode.type = type ?? "sine";
