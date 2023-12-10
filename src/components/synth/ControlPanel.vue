@@ -18,6 +18,8 @@ const vsti = synth.vsti;
     <ControlParam label="Waveform">
       <BaseSelect v-model="vsti.waveform" :items="wavetable" />
     </ControlParam>
+  </div>
+  <div class="flex flex-row justify-between w-30 p-3 text-accent">
     <ControlParam label="Volume">
       <BaseSlider
         v-model="vsti.masterVolume.gainNode.gain.value"
@@ -26,24 +28,8 @@ const vsti = synth.vsti;
         :step="0.001"
       />
     </ControlParam>
-    <ControlParam label="Reverb Duration">
-      <BaseSlider
-        v-model="vsti.reverb.duration"
-        :min="0.001"
-        :max="5"
-        :step="0.001"
-      />
-    </ControlParam>
-    <ControlParam label="Reverb Decay">
-      <BaseSlider
-        v-model="vsti.reverb.decay"
-        :min="0"
-        :max="10"
-        :step="0.001"
-      />
-    </ControlParam>
   </div>
-  <div class="flex flex-col justify-between w-full p-3 text-accent">
+  <div class="flex flex-row justify-between w-full p-3 text-accent">
     <ControlParam label="Attack">
       <BaseSlider v-model="vsti.envelope.attack.duration" :min="0" :max="2" />
     </ControlParam>
@@ -55,6 +41,24 @@ const vsti = synth.vsti;
     </ControlParam>
     <ControlParam label="Release">
       <BaseSlider v-model="vsti.envelope.release.duration" :min="0" :max="5" />
+    </ControlParam>
+  </div>
+  <div class="flex flex-row justify-between w-full p-3 text-accent">
+    <ControlParam label="Reverb Duration">
+      <BaseSlider
+        :min="0.001"
+        :max="5"
+        :step="0.001"
+        @update="vsti.reverb.setDuration"
+      />
+    </ControlParam>
+    <ControlParam label="Reverb Decay">
+      <BaseSlider
+        :min="0"
+        :max="10"
+        :step="0.001"
+        @update="vsti.reverb.setDecay"
+      />
     </ControlParam>
   </div>
 </template>
