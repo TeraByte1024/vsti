@@ -58,8 +58,8 @@ export class Vsti {
   }
 
   play(pitch: string) {
-    console.log(pitch);
     this.audioContext.resume();
+
     const oscModule = new OscillatorModule(
       this.audioContext,
       this.envelope,
@@ -67,15 +67,19 @@ export class Vsti {
       this.waveform
     );
     oscModule.connect(this.output);
-    this.oscModules[pitch] = oscModule;
+
+    if (this.isPlaying[pitch] == true) {
+      this.oscModules[pitch].delete();
+    }
     this.isPlaying[pitch] = true;
-    oscModule.start();
+
+    this.oscModules[pitch] = oscModule;
+    oscModule.startEnvelope();
   }
 
   stop(pitch: string) {
-    console.log(pitch);
     this.isPlaying[pitch] = false;
-    this.oscModules[pitch].end();
+    this.oscModules[pitch].endEnvelope();
   }
 }
 
@@ -129,27 +133,33 @@ export class OscillatorModule extends Module {
     this.envelope = envelope;
   }
 
-  start() {
+  startEnvelope() {
     const { attack, decay, sustain } = this.envelope;
     const gain = this.envelopeGainNode.gain;
-    let t = this.audioContext.currentTime;
-    gain.setValueAtTime(0, t);
-    t += attack.duration;
-    gain.linearRampToValueAtTime(1, t);
-    t += decay.duration;
-    gain.linearRampToValueAtTime(sustain.velocity, t);
+    const currentTime = this.audioContext.currentTime;
+    gain.setValueAtTime(0, currentTime);
+    const attackEndTime = currentTime + attack.duration;
+    gain.linearRampToValueAtTime(1, attackEndTime);
+    const decayEndTime = attackEndTime + decay.duration;
+    gain.linearRampToValueAtTime(sustain.velocity, decayEndTime);
     this.oscNode.start();
   }
 
-  end() {
+  endEnvelope() {
     const { sustain, release } = this.envelope;
     const gain = this.envelopeGainNode.gain;
-    let t = this.audioContext.currentTime;
-    gain.cancelScheduledValues(t);
-    gain.setValueAtTime(Math.min(gain.value, sustain.velocity), t);
-    t += release.duration;
-    gain.linearRampToValueAtTime(0, t);
-    this.oscNode.stop(t);
+    const currentTime = this.audioContext.currentTime;
+    gain.cancelScheduledValues(currentTime);
+    gain.setValueAtTime(Math.min(gain.value, sustain.velocity), currentTime);
+    const releaseEndTime = currentTime + release.duration;
+    gain.linearRampToValueAtTime(0, releaseEndTime);
+    this.oscNode.stop(releaseEndTime);
+  }
+
+  delete() {
+    const currentTime = this.audioContext.currentTime;
+    this.envelopeGainNode.gain.cancelScheduledValues(currentTime);
+    this.oscNode.stop();
   }
 }
 
