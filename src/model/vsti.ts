@@ -54,6 +54,7 @@ export class Vsti {
     this.reverb = reverbModule;
     this.modules.push(reverbModule);
 
+    reverbModule.connect(masterVolume);
     this.output = masterVolume;
   }
 
@@ -66,7 +67,7 @@ export class Vsti {
       frequencyMap[pitch],
       this.waveform
     );
-    oscModule.connect(this.output);
+    oscModule.connect(this.reverb);
 
     if (this.isPlaying[pitch] == true) {
       this.oscModules[pitch].delete();
@@ -180,8 +181,8 @@ export class GainModule extends Module {
 }
 
 export class ReverbModule extends Module {
-  input: ConvolverNode;
-  output: ConvolverNode;
+  input: GainNode;
+  output: GainNode;
 
   convolverNode: ConvolverNode;
 
@@ -197,19 +198,25 @@ export class ReverbModule extends Module {
     const convolverNode = audioContext.createConvolver();
     this.convolverNode = convolverNode;
     this.refreshImpulseResponse();
-    this.input = convolverNode;
-    this.output = convolverNode;
+
+    const inputGainNode = audioContext.createGain();
+    const outputGainNode = audioContext.createGain();
+    inputGainNode.connect(convolverNode);
+    convolverNode.connect(outputGainNode);
+    inputGainNode.connect(outputGainNode);
+    this.input = inputGainNode;
+    this.output = outputGainNode;
   }
 
-  setDuration(duration: number) {
+  setDuration = (duration: number) => {
     this.duration = duration;
     this.refreshImpulseResponse();
-  }
+  };
 
-  setDecay(decay: number) {
+  setDecay = (decay: number) => {
     this.decay = decay;
     this.refreshImpulseResponse();
-  }
+  };
 
   refreshImpulseResponse() {
     this.convolverNode.buffer = this.getImpulseResponse(
@@ -229,6 +236,14 @@ export class ReverbModule extends Module {
     for (let i = 0; i < length; i++)
       IRArray[i] = (2 * Math.random() - 1) * Math.pow(1 - i / length, decay);
     return impulse;
+  }
+
+  connect(next: Module) {
+    this.output.connect(next.input);
+  }
+
+  connectDestination() {
+    this.output.connect(this.audioContext.destination);
   }
 }
 
