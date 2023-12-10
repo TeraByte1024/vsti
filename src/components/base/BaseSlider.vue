@@ -3,7 +3,7 @@ import { ref, onMounted } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    modelValue: number;
+    modelValue?: number;
     min?: number;
     max?: number;
     step?: number;
@@ -17,12 +17,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: number): void;
+  (e: "update", value: number): void;
 }>();
 
 // const thumbElement = ref<HTMLInputElement>();
 const displayElement = ref<HTMLSpanElement>();
 
-const amount = ref<number>(props.modelValue);
+const amount = ref<number>(props.modelValue ?? 0.5);
 const isFocused = ref(false);
 
 function input(event: MouseEvent) {
@@ -36,6 +37,7 @@ function input(event: MouseEvent) {
   //   displayElement.value.style.left =
   //     (thumbElement.value?.offsetLeft ?? 0)?.toString() + "px";
   emit("update:modelValue", amount.value);
+  emit("update", amount.value);
 }
 
 const change = () => {
