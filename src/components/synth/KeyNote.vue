@@ -1,116 +1,51 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import store from '@components/stores/store';
-import { EnvelopeProps } from '@interfaces/vsti';
+import { computed } from "vue";
+import { useSynthStore } from "@store/synth";
+import { EnvelopeProps } from "@model/vsti";
 
-const props = withDefaults(defineProps<{
-    keyBind: string,
-    pitch: string,
-    frequency: number,
-    waveform?: OscillatorType,
-    isPlaying: boolean,
-    readonly envelope: EnvelopeProps
-}>(), {
-    waveform: 'sine',
-    isPlaying: false
-});
-
-const emit = defineEmits<{
-    (event: 'updateNode', tail: AudioNode): void
+const props = defineProps<{
+  pitch: string;
 }>();
 
-const audioContext: AudioContext = store.state.audioContext;
-let oscNode: OscillatorNode;
-let envelopeGainNode: GainNode;
+const synth = useSynthStore();
+const vsti = synth.vsti;
+const isPlaying = computed(() => vsti.isPlaying[props.pitch]);
 
-onMounted(()=>{
-    refreshNode();
-});
-
-function refreshNode() {
-    oscNode = getOscNode();
-    envelopeGainNode = getGainNode();
-    oscNode.connect(envelopeGainNode);
-    emit('updateNode', envelopeGainNode);
+function mouseenterCheck(e: MouseEvent, pitch: string) {
+  if (e.buttons == 1) {
+    vsti.play(pitch);
+  }
 }
 
-function getOscNode(): OscillatorNode {
-    const oscNode = audioContext.createOscillator();
-    oscNode.frequency.value = props.frequency;
-    oscNode.type = props.waveform;
-    return oscNode;
+function mouseleaveCheck(e: MouseEvent, pitch: string) {
+  if (e.buttons == 1) {
+    vsti.stop(pitch);
+  }
 }
-
-function getGainNode(): GainNode {
-    const gainNode = audioContext.createGain();
-    return gainNode;
-}
-
-watch(()=>props.waveform, (waveform: OscillatorType) => {
-    oscNode.type = waveform;
-});
-
-watch(()=>props.isPlaying, (isPlaying:boolean) => {
-    if(isPlaying) {
-        startEnvelope();
-    } else {
-        endEnvelope();
-        refreshNode();
-    }
-});
-
-function startEnvelope() {
-    const { attack, decay, sustain } = props.envelope;
-    const gain = envelopeGainNode.gain;
-    let t = audioContext.currentTime;
-    gain.setValueAtTime(0, t);
-    t += attack.duration;
-    gain.linearRampToValueAtTime(1, t);
-    t += decay.duration;
-    gain.linearRampToValueAtTime(sustain.velocity, t);
-    oscNode.start();
-}
-
-function endEnvelope() {
-    const { sustain, release } = props.envelope;
-    const gain = envelopeGainNode.gain;
-    let t = audioContext.currentTime;
-    gain.cancelScheduledValues(t);
-    gain.setValueAtTime(Math.min(gain.value, sustain.velocity), t);
-    t += release.duration;
-    gain.linearRampToValueAtTime(0, t);
-    oscNode.stop(t);
-}
-
 </script>
 
 <template>
-    <div class="keyNote" :class="{'playing':props.isPlaying}">
-        <span id="pitch">{{ pitch }}</span>
-    </div>
+  <div
+    class="key w-full bg-secondary text-center text-primary"
+    :class="{ playing: isPlaying }"
+    @mousedown="vsti.play(pitch)"
+    @mouseup="vsti.stop(pitch)"
+    @touchstart="vsti.play(pitch)"
+    @touchend="vsti.stop(pitch)"
+    @mouseenter="(e) => mouseenterCheck(e, pitch)"
+    @mouseleave="(e) => mouseleaveCheck(e, pitch)"
+  >
+    {{ pitch }}
+  </div>
 </template>
 
 <style scoped>
-.keyNote {
-    display: inline-block;
-    height: 60px;
-    width: 40px;
-    text-align: center;
-    margin: 1px;
-    border-radius: 5px;
-    color: #06113C;
-    background-color: #EEEEEE;
+.key.playing {
+  background-color: #354649 !important;
+  color: #e5edee;
 }
 
-#pitch {
-    display: inline-block;
-    padding-bottom: 0px;
-    padding-top: 75%;
+.key {
+  font-size: 0.5rem;
 }
-
-.playing {
-    background-color: #06113C;
-    color: white;
-}
-
 </style>

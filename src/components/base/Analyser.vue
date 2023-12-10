@@ -1,64 +1,65 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from "vue";
+import { useSynthStore } from "@store/synth";
 
 const props = defineProps<{
-    analyserNode: AnalyserNode
+  width: number;
+  height: number;
 }>();
 
-const analyserNode = props.analyserNode;
-let bufferLength: number;
-let dataArray: Uint8Array;
-let canvas:HTMLCanvasElement;
+const synth = useSynthStore();
+const vsti = synth.vsti;
+const analyser = synth.analyserModule;
+const canvasElement = ref<HTMLCanvasElement>();
 let canvasContext: CanvasRenderingContext2D;
 
-onMounted(()=> {
-    initializeAnalyserNode();
+onMounted(() => {
+  canvasContext = canvasElement.value?.getContext(
+    "2d"
+  ) as CanvasRenderingContext2D;
+
+  draw();
 });
 
-function initializeAnalyserNode() {
-    analyserNode.fftSize = Math.pow(2, 13);
-    bufferLength = analyserNode.frequencyBinCount;
-    dataArray = new Uint8Array(bufferLength);
-    canvas = document.getElementById("oscilloscope") as HTMLCanvasElement;
-    canvasContext = canvas.getContext("2d") as CanvasRenderingContext2D;
-    draw();
-}
-
 function draw() {
-    requestAnimationFrame(draw);
+  requestAnimationFrame(draw);
 
-    analyserNode.getByteTimeDomainData(dataArray);
+  analyser.analyserNode.getByteTimeDomainData(analyser.dataArray);
+  if (!canvasElement.value) return;
 
-    canvasContext.fillStyle = "#EEEEEE";
-    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  const width = props.width;
+  const height = props.height;
+  canvasContext.fillStyle = "#E5EDEE";
+  canvasContext.fillRect(0, 0, width, height);
 
-    canvasContext.lineWidth = 2;
-    canvasContext.strokeStyle = "#00092C";
+  canvasContext.lineWidth = 2;
+  canvasContext.strokeStyle = "#758295";
 
-    canvasContext.beginPath();
+  canvasContext.beginPath();
 
-    const sliceWidth = (canvas.width * 1.0) / bufferLength;
-    let x = 0;
-    let y = canvas.height / 2;
-    canvasContext.moveTo(x, y);
-    for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-        canvasContext.lineTo(x, y);
-        x += sliceWidth;
-    }
+  const sliceWidth = (width * 1.0) / analyser.bufferLength;
+  let x = 0;
+  let y = height / 2;
+  canvasContext.moveTo(x, y);
+  for (let i = 0; i < analyser.bufferLength; i++) {
+    const v = analyser.dataArray[i] / 128.0;
+    const y = (v * height) / 2;
+    canvasContext.lineTo(x, y);
+    x += sliceWidth;
+  }
 
-    canvasContext.lineTo(canvas.width, canvas.height / 2);
-    canvasContext.stroke();
+  canvasContext.lineTo(width, height / 2);
+  canvasContext.stroke();
 }
 </script>
 
 <template>
-    <canvas id="oscilloscope" width="200" height="100"></canvas>
+  <canvas
+    ref="canvasElement"
+    :width="width"
+    :height="height"
+    class="block w-full"
+  ></canvas>
 </template>
 
-<style scoped>
-#oscilloscope {
-    border-radius: 5px;
-}
-</style>
+<style scoped></style>

@@ -2,11 +2,14 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
     "allowJs": true,
     "checkJs": true,
     "declaration": true,
     "removeComments": true,
     "strict": true,
+    "types": ["node"],
 
     "baseUrl": ".",
     "outDir": "./dist",
