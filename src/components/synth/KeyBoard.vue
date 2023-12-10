@@ -28,15 +28,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col w-full">
-    <div class="flex justify-center">
-      <KeyNote
-        v-for="key in Object.keys(keyBinds)"
-        :keyBind="key"
-        :pitch="keyBinds[key]"
-      />
-    </div>
+  <div class="container-key flex flex-row justify-between w-full h-20">
+    <KeyNote v-for="pitch in Object.keys(frequencyMap)" :pitch="pitch" />
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.container-key .key:nth-child(12n + 1) {
+  background-color: #d4dcdd;
+}
+</style>
